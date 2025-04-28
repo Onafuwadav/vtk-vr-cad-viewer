@@ -1,0 +1,285 @@
+#include "mainwindow.h"
+#include "./ui_mainwindow.h"
+#include <QMessageBox>  // Include QMessageBox for displaying message boxes
+#include "ModelPart.h"  // Include ModelPart header
+#include "ModelPartList.h"  // Include ModelPartList header
+#include <QFileDialog>  // Include QFileDialog for file dialogs
+#include "optiondialog.h"  // Include Option_Dialog header
+
+// VTK Headers
+#include <QVTKOpenGLNativeWidget.h>  // Include QVTKOpenGLNativeWidget
+#include <vtkSmartPointer.h>  // Include VTK smart pointers
+#include <vtkRenderer.h>  // Include VTK renderer
+#include <vtkGenericOpenGLRenderWindow.h>  // Include VTK render window
+#include <vtkCylinderSource.h>  // Include VTK cylinder source
+#include <vtkPolyDataMapper.h>  // Include VTK poly data mapper
+#include <vtkActor.h>  // Include VTK actor
+#include <vtkNamedColors.h>  // Include VTK named colors
+#include <vtkProperty.h>  // Include vtkProperty header
+#include <vtkCamera.h>  // Include vtkCamera header
+
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+{
+    ui->setupUi(this);
+
+    // Connect button click to handleButton() slot
+    connect(ui->pushButton, &QPushButton::released, this, &MainWindow::handleButton);
+        // Create / allocate the ModelPartList
+    this->partList = new ModelPartList("PartsList");
+
+    // Link it to the treeview in the GUI
+    ui->treeView->setModel(this->partList);
+
+    // Manually create a model tree
+    ModelPart* rootItem = this->partList->getRootItem();
+    // Create strings for both data columns
+    QString name = QString("Model");
+    QString visible("true");
+
+    // Create child item
+    ModelPart* childItem = new ModelPart({ name, visible });
+
+    // Append to tree top-level
+    rootItem->appendChild(childItem);
+    // Add 3 top-level items
+   /* for (int i = 0; i < 3; i++) {
+        // Create strings for both data columns
+        QString name = QString("TopLevel %1").arg(i);
+        QString visible("true");
+
+        // Create child item
+        ModelPart* childItem = new ModelPart({ name, visible });
+
+        // Append to tree top-level
+        rootItem->appendChild(childItem);
+
+        // Add 5 sub-items
+        for (int j = 0; j < 5; j++) {
+            QString name = QString("Item %1,%2").arg(i).arg(j);
+            QString visible("true");
+
+            ModelPart* childChildItem = new ModelPart({ name, visible });
+
+            // Append to parent
+
+            childItem->appendChild(childChildItem);
+
+        }
+
+    }*/
+    // Connect the custom signal to QStatusBar’s showMessage() slot
+    connect(this, &MainWindow::statusUpdateMessage, ui->statusbar, &QStatusBar::showMessage);
+    // Connect the treeView's clicked signal to the handleTreeClicked slot
+    connect(ui->treeView, &QTreeView::clicked, this, &MainWindow::handleTreeClicked);
+    // Connect the edit button's clicked signal to the handleEditButton slot
+    connect(ui->pushButton_2, &QPushButton::released, this, &MainWindow::handleEditButton);
+    // Set the context menu policy for the treeView
+    ui->treeView->setContextMenuPolicy(Qt::ActionsContextMenu);
+
+    // Add the action to the treeView's context menu
+    ui->treeView->addAction(ui->actionItem_Options);
+    // Link a render window with the Qt widget
+    renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+    ui->vtkWidget->setRenderWindow(renderWindow);
+
+    // Add a renderer
+    renderer = vtkSmartPointer<vtkRenderer>::New();
+    renderWindow->AddRenderer(renderer);
+
+    /* Create an object and add to renderer (this will change later to display a CAD model) */
+    /* Will just copy and paste cylinder example from before */
+    // This creates a polygonal cylinder model with eight circumferential facets
+    // (i.e, in practice an octagonal prism).
+    vtkNew<vtkCylinderSource> cylinder;
+    cylinder->SetResolution(8);
+
+    // The mapper is responsible for pushing the geometry into the graphics
+    // library. It may also do color mapping, if scalars or other attributes are
+    // defined.
+    vtkNew<vtkPolyDataMapper> cylinderMapper;
+    cylinderMapper->SetInputConnection(cylinder->GetOutputPort());
+
+    // The actor is a grouping mechanism: besides the geometry (mapper), it
+    // also has a property, transformation matrix, and/or texture map.
+    // Here we set its color and rotate it around the X and Y axes.
+    vtkNew<vtkActor> cylinderActor;
+    cylinderActor->SetMapper(cylinderMapper);
+    cylinderActor->GetProperty()->SetColor(1., 0., 0.35);
+    cylinderActor->RotateX(30.0);
+    cylinderActor->RotateY(-45.0);
+
+    renderer->AddActor(cylinderActor);
+
+    /* Reset Camera (probably needs to go in its own function that is called whenever model is changed) */
+    renderer->ResetCamera();
+    renderer->GetActiveCamera()->Azimuth(30);
+    renderer->GetActiveCamera()->Elevation(30);
+    renderer->ResetCameraClippingRange();
+
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+}
+void MainWindow::handleButton() {
+    QMessageBox msgBox;
+    msgBox.setText("Add button was clicked");
+    msgBox.exec();
+    emit statusUpdateMessage("Button clicked!", 3000);
+}
+void MainWindow::handleTreeClicked() {
+    // Get the index of the selected item
+    QModelIndex index = ui->treeView->currentIndex();
+
+    // Get a pointer to the item from the index
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+    // Retrieve the name string from the internal QVariant data array
+    QString text = selectedPart->data(0).toString();
+
+    // Emit a signal to update the status bar with the selected item's name
+    emit statusUpdateMessage(QString("The selected item is: ") + text, 0);
+}
+void MainWindow::on_actionOpen_File_triggered() {
+
+    QString fileName = QFileDialog::getOpenFileName(
+        this,                               // Parent widget
+        tr("Open File"),                    // Dialog title
+        "C:\\",                             // Default directory
+        tr("STL Files (*.stl);;Text Files (*.txt)")  // File filters
+        );
+    // Check if a file was selected
+    if (!fileName.isEmpty()) {
+        // Display the selected file's name in the status bar
+        emit statusUpdateMessage(QString("Selected file: ") + fileName, 0);
+        // Get the currently selected item in the tree view
+        QModelIndex index = ui->treeView->currentIndex();
+        ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+        // If no item is selected, use the root item
+        if (!selectedPart) {
+            selectedPart = partList->getRootItem();
+        }
+
+        // Create a new child item for the selected part
+        QString name = QFileInfo(fileName).fileName();  // Use the file name as the item name
+        QString visible("true");
+
+        ModelPart* childItem = new ModelPart({ name, visible });
+        selectedPart->appendChild(childItem);
+
+        // Load the STL file into the new item
+        childItem->loadSTL(fileName);
+
+        // Refresh the renderer to display the new STL file
+        updateRender();
+        // Reset the camera to ensure the new model is visible
+        renderer->ResetCamera();
+        renderer->GetActiveCamera()->Azimuth(30);
+        renderer->GetActiveCamera()->Elevation(30);
+        renderer->ResetCameraClippingRange();
+        renderWindow->Render(); // Force immediate render
+    } else {
+        // Display a message if no file was selected
+        emit statusUpdateMessage("No file selected.", 0);
+    }
+}
+void MainWindow::handleEditButton() {
+    // Get the selected item from the tree view
+    OptionDialog dialog(this);
+
+    QModelIndex index = ui->treeView->currentIndex();
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+    if (!selectedPart) {
+        emit statusUpdateMessage("No item selected.", 0);
+        return;
+    }
+    // Create an instance of the OptionDialog
+
+    // Set the dialog's initial values from the selected part
+    dialog.setName(selectedPart->data(0).toString());
+    dialog.setColour(QColor(selectedPart->getColourR(), selectedPart->getColourG(), selectedPart->getColourB()));
+    dialog.setItemVisible(selectedPart->isItemVisible());
+
+
+    // Show the dialog and check if it was accepted
+    if (dialog.exec() == QDialog::Accepted) {
+        // Update the selected part with the dialog's values
+        selectedPart->set(0, dialog.getName());
+        selectedPart->setColour(dialog.getColour().red(), dialog.getColour().green(), dialog.getColour().blue());
+        selectedPart->setItemVisible(dialog.isItemVisible());
+
+        emit statusUpdateMessage(QString("Dialog accepted"), 0);
+    } else {
+        emit statusUpdateMessage(QString("Dialog rejected"), 0);
+    }
+}
+
+void MainWindow::on_actionItem_Options_triggered() {
+    // Get the selected item from the tree view
+    QModelIndex index = ui->treeView->currentIndex();
+    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+    if (!selectedPart) {
+        emit statusUpdateMessage("No item selected.", 0);
+        return;
+    }
+
+    // Create an instance of the OptionDialog
+    OptionDialog dialog(this);
+
+    // Set the dialog's initial values from the selected part
+    dialog.setName(selectedPart->data(0).toString());
+    dialog.setColour(QColor(selectedPart->getColourR(), selectedPart->getColourG(), selectedPart->getColourB()));
+    dialog.setItemVisible(selectedPart->isItemVisible());
+
+    // Show the dialog and check if it was accepted
+    if (dialog.exec() == QDialog::Accepted) {
+        // Update the selected part with the dialog's values
+        selectedPart->set(0, dialog.getName());
+        selectedPart->setColour(dialog.getColour().red(), dialog.getColour().green(), dialog.getColour().blue());
+        selectedPart->setItemVisible(dialog.isItemVisible());
+
+        emit statusUpdateMessage(QString("Dialog accepted"), 0);
+    } else {
+        emit statusUpdateMessage(QString("Dialog rejected"), 0);
+    }
+}
+void MainWindow::updateRender() {
+    // Remove all existing actors from the renderer
+    renderer->RemoveAllViewProps();
+
+    // Update the renderer with actors from the tree
+    updateRenderFromTree(partList->index(0, 0, QModelIndex()));
+
+    // Force an immediate update of the renderer
+    renderer->Render();
+    renderWindow->Render(); // Ensure the render window updates
+}
+
+void MainWindow::updateRenderFromTree(const QModelIndex& index) {
+    if (index.isValid()) {
+        // Retrieve the ModelPart associated with the index
+        ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+
+        // Add the actor from the selected part to the renderer
+        if (selectedPart->getActor()) {
+            renderer->AddActor(selectedPart->getActor());
+        }
+    }
+
+    // Check if this part has any children
+    if (!partList->hasChildren(index) || (index.flags() & Qt::ItemNeverHasChildren)) {
+        return;
+    }
+
+    // Loop through children and add their actors
+    int rows = partList->rowCount(index);
+    for (int i = 0; i < rows; i++) {
+        updateRenderFromTree(partList->index(i, 0, index));
+    }
+}
