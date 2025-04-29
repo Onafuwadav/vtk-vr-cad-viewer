@@ -47,6 +47,7 @@ public slots:  // Add this missing line to declare the slot function
      void on_actionOpen_File_triggered();  // Slot for handling the "Open File" action
        void handleEditButton();  // New slot for the edit button
       void on_actionItem_Options_triggered();
+      void on_actionOpen_Folder_triggered();
 
 signals:
     void statusUpdateMessage(const QString &message, int timeout);  // Signal for status bar updates
