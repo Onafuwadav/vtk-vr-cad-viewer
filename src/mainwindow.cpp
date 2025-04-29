@@ -5,6 +5,7 @@
 #include "ModelPartList.h"  // Include ModelPartList header
 #include <QFileDialog>  // Include QFileDialog for file dialogs
 #include "optiondialog.h"  // Include Option_Dialog header
+#include <QDir>
 
 // VTK Headers
 #include <QVTKOpenGLNativeWidget.h>  // Include QVTKOpenGLNativeWidget
@@ -282,4 +283,47 @@ void MainWindow::updateRenderFromTree(const QModelIndex& index) {
     for (int i = 0; i < rows; i++) {
         updateRenderFromTree(partList->index(i, 0, index));
     }
+}
+void MainWindow::on_actionOpen_Folder_triggered() {
+    QString folderPath = QFileDialog::getExistingDirectory(
+        this,
+        tr("Select Folder"),
+        "C:\\", // Default folder
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
+        );
+
+    if (folderPath.isEmpty()) {
+        emit statusUpdateMessage("No folder selected.", 0);
+        return;
+    }
+
+    QDir directory(folderPath);
+    QStringList stlFiles = directory.entryList(QStringList() << "*.stl", QDir::Files);
+
+    if (stlFiles.isEmpty()) {
+        emit statusUpdateMessage("No STL files found in folder.", 0);
+        return;
+    }
+
+    // Load each STL file
+    for (const QString& fileName : stlFiles) {
+        QString fullPath = directory.filePath(fileName);
+
+        // Create new part
+        QModelIndex index = ui->treeView->currentIndex();
+        ModelPart* parentPart = nullptr;
+        if (index.isValid()) {
+            parentPart = static_cast<ModelPart*>(index.internalPointer());
+        } else {
+            parentPart = partList->getRootItem();
+            index = partList->index(0, 0, QModelIndex());
+        }
+
+        ModelPart* childPart = new ModelPart({fileName, "true"});
+        parentPart->appendChild(childPart);
+        childPart->loadSTL(fullPath);
+    }
+
+    updateRender(); // Refresh the 3D scene
+    emit statusUpdateMessage(QString("Loaded %1 STL files.").arg(stlFiles.count()), 0);
 }
