@@ -214,3 +214,7 @@ vtkSmartPointer<vtkActor> ModelPart::getActor() {
     
 }
 
+void ModelPart::removeChild(int row) {
+    if (row >= 0 && row < m_childItems.size())
+        m_childItems.removeAt(row);
+}

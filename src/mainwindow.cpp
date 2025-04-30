@@ -80,6 +80,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->treeView->setContextMenuPolicy(Qt::ActionsContextMenu);
 
     // Add the action to the treeView's context menu
+    ui->treeView->addAction(ui->actionRemove_Item);
+
+    // Add the action to the treeView's context menu
     ui->treeView->addAction(ui->actionItem_Options);
     // Link a render window with the Qt widget
     renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
@@ -327,3 +330,31 @@ void MainWindow::on_actionOpen_Folder_triggered() {
     updateRender(); // Refresh the 3D scene
     emit statusUpdateMessage(QString("Loaded %1 STL files.").arg(stlFiles.count()), 0);
 }
+void MainWindow::on_actionRemove_Item_triggered() {
+    QModelIndex index = ui->treeView->currentIndex();
+
+    if (!index.isValid()) {
+        emit statusUpdateMessage("No item selected to remove.", 0);
+        return;
+    }
+
+    // Optional: Ask user for confirmation
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Remove Item",
+                                  "Are you sure you want to remove the selected item?",
+                                  QMessageBox::Yes | QMessageBox::No);
+
+    if (reply != QMessageBox::Yes) {
+        emit statusUpdateMessage("Removal cancelled.", 0);
+        return;
+    }
+
+    if (!partList->removePart(index)) {
+        emit statusUpdateMessage("Could not remove item.", 0);
+        return;
+    }
+
+    updateRender(); // Refresh 3D view
+    emit statusUpdateMessage("Item removed.", 0);
+}
+

@@ -126,6 +126,7 @@ public:
       * @return pointer to new actor
       */
     //vtkActor* getNewActor();
+    void removeChild(int row);
 
 private:
     QList<ModelPart*>                           m_childItems;       /**< List (array) of child items */
