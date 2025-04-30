@@ -95,6 +95,7 @@ public:
       */
     QModelIndex appendChild( QModelIndex& parent, const QList<QVariant>& data );
 
+    bool removePart(const QModelIndex& index);
 
 private:
     ModelPart *rootItem;    /**< This is a pointer to the item at the base of the tree */

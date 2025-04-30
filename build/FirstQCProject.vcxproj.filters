@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\mocs_compilation_Debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\src\mainwindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\src\ModelPart.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\src\ModelPartList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\src\optiondialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\EWIEGA46WW_Debug\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\mocs_compilation_Release.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\EWIEGA46WW_Release\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\mocs_compilation_MinSizeRel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\EWIEGA46WW_MinSizeRel\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\mocs_compilation_RelWithDebInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\EWIEGA46WW_RelWithDebInfo\qrc_icons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\src\mainwindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\src\ModelPart.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\src\ModelPartList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\src\optiondialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_Debug\ui_mainwindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_Debug\ui_optiondialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_Release\ui_mainwindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_Release\ui_optiondialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_MinSizeRel\ui_mainwindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_MinSizeRel\ui_optiondialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_RelWithDebInfo\ui_mainwindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\include_RelWithDebInfo\ui_optiondialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\debor\2024_GROUP13\build\CMakeFiles\26743b2be7f82dbec884de00b53d9058\autouic_(CONFIG).stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\debor\2024_GROUP13\build\CMakeFiles\c1b272e6816eb11fdeab0b8b961daf3f\qrc_icons.cpp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\debor\2024_GROUP13\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\debor\2024_GROUP13\src\mainwindow.ui" />
+    <None Include="C:\Users\debor\2024_GROUP13\src\icons.qrc" />
+    <None Include="C:\Users\debor\2024_GROUP13\src\optiondialog.ui" />
+    <None Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\autouic_Debug.stamp" />
+    <None Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\autouic_Release.stamp" />
+    <None Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\autouic_MinSizeRel.stamp" />
+    <None Include="C:\Users\debor\2024_GROUP13\build\FirstQCProject_autogen\autouic_RelWithDebInfo.stamp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{9ECA9B7A-B600-38F8-9D0E-A79708156DE6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{2E43ACE2-508B-325D-9060-2E99E21C8883}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1DAC6F18-AEC1-3DAD-BF7F-39C28C0738DC}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

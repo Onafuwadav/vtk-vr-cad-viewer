@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\debor\2024_GROUP13\build\CMakeFiles\9eeebe7e6b72fb1a0bc41d696c862299\FirstQCProject_build.cmake.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\debor\2024_GROUP13\build\CMakeFiles\abf8288f93d704f1ee8e932344bf1e97\FirstQCProject_qmlimportscan.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\debor\2024_GROUP13\src\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\debor\2024_GROUP13\build\CMakeFiles\FirstQCProject_qmlimportscan" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{9ECA9B7A-B600-38F8-9D0E-A79708156DE6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

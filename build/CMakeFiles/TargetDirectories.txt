@@ -1,0 +1,6 @@
+C:/Users/debor/2024_GROUP13/build/CMakeFiles/FirstQCProject.dir
+C:/Users/debor/2024_GROUP13/build/CMakeFiles/FirstQCProject_qmlimportscan.dir
+C:/Users/debor/2024_GROUP13/build/CMakeFiles/VRBindings.dir
+C:/Users/debor/2024_GROUP13/build/CMakeFiles/INSTALL.dir
+C:/Users/debor/2024_GROUP13/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/debor/2024_GROUP13/build/CMakeFiles/ZERO_CHECK.dir
