@@ -8,7 +8,7 @@
 #include <QDir>
 
 // VTK Headers
-#include <QVTKOpenGLNativeWidget.h>  // Include QVTKOpenGLNativeWidget
+#include <QVTKOpenGLNativeWidget.h>  // Include QVTKOpenGLNativeWidget 
 #include <vtkSmartPointer.h>  // Include VTK smart pointers
 #include <vtkRenderer.h>  // Include VTK renderer
 #include <vtkGenericOpenGLRenderWindow.h>  // Include VTK render window
@@ -18,6 +18,7 @@
 #include <vtkNamedColors.h>  // Include VTK named colors
 #include <vtkProperty.h>  // Include vtkProperty header
 #include <vtkCamera.h>  // Include vtkCamera header
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -92,6 +93,17 @@ MainWindow::MainWindow(QWidget *parent)
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderWindow->AddRenderer(renderer);
 
+    //Add Vr Renderer
+    vrRenderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
+
+    // Add VR render window
+    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
+    vrRenderWindow->AddRenderer(vrRenderer);
+
+    // VR interactor
+    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
+    vrInteractor->SetRenderWindow(vrRenderWindow);
+
     /* Create an object and add to renderer (this will change later to display a CAD model) */
     /* Will just copy and paste cylinder example from before */
     // This creates a polygonal cylinder model with eight circumferential facets
@@ -134,6 +146,26 @@ void MainWindow::handleButton() {
     msgBox.exec();
     emit statusUpdateMessage("Button clicked!", 3000);
 }
+
+void MainWindow::on_actionStop_Vr_triggered() {
+    if (vrInteractor) {
+        vrInteractor->TerminateApp();  // Graceful stop
+        emit statusUpdateMessage("VR Stopped!", 3000);
+    }
+}
+
+void MainWindow::on_actionStart_Vr_triggered() {
+    if (!vrRenderer || !vrRenderWindow) {
+        emit statusUpdateMessage("VR not initialized properly.", 0);
+        return;
+    }
+
+    // Reset VR camera
+    vrRenderer->ResetCamera();
+    vrRenderWindow->Render();
+    vrInteractor->Start();  // Enters VR render loop (blocking)
+}
+
 void MainWindow::handleTreeClicked() {
     // Get the index of the selected item
     QModelIndex index = ui->treeView->currentIndex();
@@ -222,7 +254,6 @@ void MainWindow::handleEditButton() {
         emit statusUpdateMessage(QString("Dialog rejected"), 0);
     }
 }
-
 void MainWindow::on_actionItem_Options_triggered() {
     // Get the selected item from the tree view
     QModelIndex index = ui->treeView->currentIndex();
@@ -256,6 +287,9 @@ void MainWindow::on_actionItem_Options_triggered() {
 void MainWindow::updateRender() {
     // Remove all existing actors from the renderer
     renderer->RemoveAllViewProps();
+    if (vrRenderer) {
+        vrRenderer->RemoveAllViewProps();
+    }
 
     // Update the renderer with actors from the tree
     updateRenderFromTree(partList->index(0, 0, QModelIndex()));
@@ -263,6 +297,11 @@ void MainWindow::updateRender() {
     // Force an immediate update of the renderer
     renderer->Render();
     renderWindow->Render(); // Ensure the render window updates
+
+    // Render VR view (if initialized)
+    if (vrRenderWindow && vrRenderer) {
+        vrRenderWindow->Render();
+    }
 }
 
 void MainWindow::updateRenderFromTree(const QModelIndex& index) {
@@ -273,6 +312,7 @@ void MainWindow::updateRenderFromTree(const QModelIndex& index) {
         // Add the actor from the selected part to the renderer
         if (selectedPart->getActor()) {
             renderer->AddActor(selectedPart->getActor());
+            vrRenderer->AddActor(selectedPart->getActor());
         }
     }
 

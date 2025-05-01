@@ -6,13 +6,16 @@
 #include "ModelPartList.h"
 #include "optiondialog.h"
 
-#include <QVTKOpenGLNativeWidget.h>
 #include <vtkSmartPointer.h>
 #include <vtkRenderer.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkCylinderSource.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
+
+#include <vtkOpenVRRenderWindow.h>
+#include <vtkOpenVRRenderer.h>
+#include <vtkOpenVRRenderWindowInteractor.h>
 
 
 
@@ -32,6 +35,11 @@ private:
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
 
+private:
+    vtkSmartPointer<vtkOpenVRRenderWindow> vrRenderWindow;
+    vtkSmartPointer<vtkOpenVRRenderer> vrRenderer;
+    vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
+
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -49,6 +57,8 @@ public slots:  // Add this missing line to declare the slot function
       void on_actionItem_Options_triggered();
       void on_actionOpen_Folder_triggered();  // New slot for opening a folder
       void on_actionRemove_Item_triggered();  // New slot for item removal
+      void on_actionStart_Vr_triggered();
+      void on_actionStop_Vr_triggered();
 
 signals:
     void statusUpdateMessage(const QString &message, int timeout);  // Signal for status bar updates
