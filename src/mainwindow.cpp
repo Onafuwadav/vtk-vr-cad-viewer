@@ -157,16 +157,31 @@ void MainWindow::on_actionStop_Vr_triggered() {
 }
 
 void MainWindow::on_actionStart_Vr_triggered() {
-    if (!vrRenderer || !vrRenderWindow) {
+    if (!vrRenderer || !vrRenderWindow || !vrInteractor) {
         emit statusUpdateMessage("VR not initialized properly.", 0);
         return;
     }
 
-    // Reset VR camera
-    isVRActive = true;
+    if (!vrRenderWindow->GetHMD()) {
+        emit statusUpdateMessage("No VR headset detected or SteamVR not running.", 0);
+        return;
+    }
+
     vrRenderer->ResetCamera();
     vrRenderWindow->Render();
-    vrInteractor->Start();  // Enters VR render loop (blocking)
+
+    if (vrThread && vrThread->isRunning()) {
+        emit statusUpdateMessage("VR is already running.", 0);
+        return;
+    }
+
+    // Create and start the render thread
+    vrThread = new VRRenderThread(vrInteractor, this);
+    vrThread->start();
+
+    emit statusUpdateMessage("VR rendering started.", 3000);
+
+    isVRActive = true;
 }
 
 void MainWindow::handleTreeClicked() {

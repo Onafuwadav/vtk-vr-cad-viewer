@@ -5,6 +5,7 @@
 #include "ModelPart.h"
 #include "ModelPartList.h"
 #include "optiondialog.h"
+#include "VRRenderThread.h" 
 
 #include <vtkSmartPointer.h>
 #include <vtkRenderer.h>
@@ -39,6 +40,7 @@ private:
     vtkSmartPointer<vtkOpenVRRenderWindow> vrRenderWindow;
     vtkSmartPointer<vtkOpenVRRenderer> vrRenderer;
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
+    VRRenderThread* vrThread = nullptr;
 
 public:
     MainWindow(QWidget *parent = nullptr);
