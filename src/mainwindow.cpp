@@ -149,11 +149,10 @@ void MainWindow::handleButton() {
 }
 
 void MainWindow::on_actionStop_Vr_triggered() {
-    if (vrInteractor) {
-        vrInteractor->TerminateApp();  // Graceful stop
-        emit statusUpdateMessage("VR Stopped!", 3000);
-    }
-    isVRActive = false;
+    QMessageBox msgBox;
+    msgBox.setText("Add button was clicked");
+    msgBox.exec();
+    emit statusUpdateMessage("Button clicked!", 3000);
 }
 
 void MainWindow::on_actionStart_Vr_triggered() {
@@ -162,21 +161,14 @@ void MainWindow::on_actionStart_Vr_triggered() {
         return;
     }
 
-    if (!vrRenderWindow->GetHMD()) {
-        emit statusUpdateMessage("No VR headset detected or SteamVR not running.", 0);
-        return;
-    }
-
-    vrRenderer->ResetCamera();
-    vrRenderWindow->Render();
-
     if (vrThread && vrThread->isRunning()) {
         emit statusUpdateMessage("VR is already running.", 0);
         return;
     }
+    vrRenderWindow->Render();
 
-    // Create and start the render thread
     vrThread = new VRRenderThread(vrInteractor, this);
+    // Create and start the render thread
     vrThread->start();
 
     emit statusUpdateMessage("VR rendering started.", 3000);

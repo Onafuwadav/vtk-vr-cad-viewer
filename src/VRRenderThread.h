@@ -10,8 +10,7 @@ class VRRenderThread : public QThread {
     Q_OBJECT
 
 public:
-    explicit VRRenderThread(vtkOpenVRRenderWindowInteractor* interactor, QObject* parent = nullptr);
-    void run() override;
+    VRRenderThread(vtkOpenVRRenderWindowInteractor* interactor, QObject* parent);
 
 private:
     vtkOpenVRRenderWindowInteractor* interactor; // raw pointer; assumed managed externally
