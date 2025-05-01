@@ -12,6 +12,7 @@
 
 #include <QString>
 #include <QList>
+#include <QVector>
 #include <QVariant>
 
 /* VTK headers - will be needed when VTK used in next worksheet,
@@ -49,6 +50,10 @@ public:
       * @param row is the row number (below this item)
       * @return pointer to the item requested.
       */
+
+    void setVisibilityRecursive(bool visible);
+
+
     ModelPart* child(int row);
 
     /** Return number of children to this item

@@ -19,6 +19,7 @@
 #include <vtkProperty.h>  // Include vtkProperty header
 #include <vtkCamera.h>  // Include vtkCamera header
 
+bool isVRActive = false; // true when the VR window is active and rendering
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -152,6 +153,7 @@ void MainWindow::on_actionStop_Vr_triggered() {
         vrInteractor->TerminateApp();  // Graceful stop
         emit statusUpdateMessage("VR Stopped!", 3000);
     }
+    isVRActive = false;
 }
 
 void MainWindow::on_actionStart_Vr_triggered() {
@@ -161,6 +163,7 @@ void MainWindow::on_actionStart_Vr_triggered() {
     }
 
     // Reset VR camera
+    isVRActive = true;
     vrRenderer->ResetCamera();
     vrRenderWindow->Render();
     vrInteractor->Start();  // Enters VR render loop (blocking)
@@ -239,8 +242,8 @@ void MainWindow::handleEditButton() {
     // Set the dialog's initial values from the selected part
     dialog.setName(selectedPart->data(0).toString());
     dialog.setColour(QColor(selectedPart->getColourR(), selectedPart->getColourG(), selectedPart->getColourB()));
-    dialog.setItemVisible(selectedPart->isItemVisible());
 
+    selectedPart->setVisibilityRecursive(dialog.isItemVisible());
 
     // Show the dialog and check if it was accepted
     if (dialog.exec() == QDialog::Accepted) {
@@ -268,6 +271,7 @@ void MainWindow::on_actionItem_Options_triggered() {
     OptionDialog dialog(this);
 
     // Set the dialog's initial values from the selected part
+
     dialog.setName(selectedPart->data(0).toString());
     dialog.setColour(QColor(selectedPart->getColourR(), selectedPart->getColourG(), selectedPart->getColourB()));
     dialog.setItemVisible(selectedPart->isItemVisible());
@@ -279,7 +283,15 @@ void MainWindow::on_actionItem_Options_triggered() {
         selectedPart->setColour(dialog.getColour().red(), dialog.getColour().green(), dialog.getColour().blue());
         selectedPart->setItemVisible(dialog.isItemVisible());
 
-        emit statusUpdateMessage(QString("Dialog accepted"), 0);
+        updateRender();
+
+        QString msg = QString("Changed color of %1 to RGB(%2, %3, %4)")
+            .arg(dialog.getName())
+            .arg(dialog.getColour().red())
+            .arg(dialog.getColour().green())
+            .arg(dialog.getColour().blue());
+
+        emit statusUpdateMessage(msg, 0);
     } else {
         emit statusUpdateMessage(QString("Dialog rejected"), 0);
     }
@@ -292,22 +304,24 @@ void MainWindow::updateRender() {
     }
 
     // Update the renderer with actors from the tree
-    updateRenderFromTree(partList->index(0, 0, QModelIndex()));
+    if (partList->rowCount(QModelIndex()) > 0) {
+        updateRenderFromTree(partList->index(0, 0, QModelIndex()));
+    }
 
     // Force an immediate update of the renderer
     renderer->Render();
     renderWindow->Render(); // Ensure the render window updates
 
     // Render VR view (if initialized)
-    if (vrRenderWindow && vrRenderer) {
+    if (isVRActive && vrRenderWindow && vrRenderer) {
         vrRenderWindow->Render();
     }
 }
-
 void MainWindow::updateRenderFromTree(const QModelIndex& index) {
     if (index.isValid()) {
         // Retrieve the ModelPart associated with the index
         ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
+        if (!selectedPart) return;
 
         // Add the actor from the selected part to the renderer
         if (selectedPart->getActor()) {
@@ -347,6 +361,9 @@ void MainWindow::on_actionOpen_Folder_triggered() {
         emit statusUpdateMessage("No STL files found in folder.", 0);
         return;
     }
+    QString folderName = directory.dirName();
+    ModelPart* stlGroupPart = new ModelPart({ folderName, "true" });
+    partList->getRootItem()->appendChild(stlGroupPart);
 
     // Load each STL file
     for (const QString& fileName : stlFiles) {
@@ -354,7 +371,7 @@ void MainWindow::on_actionOpen_Folder_triggered() {
 
         // Create new part
         QModelIndex index = ui->treeView->currentIndex();
-        ModelPart* parentPart = nullptr;
+        ModelPart* parentPart = stlGroupPart;
         if (index.isValid()) {
             parentPart = static_cast<ModelPart*>(index.internalPointer());
         } else {
