@@ -8,7 +8,7 @@
   */
 
 #include "VRRenderThread.h"
-
+#include <QDebug>
 
   /* Vtk headers */
 #include <vtkActor.h>
@@ -50,8 +50,9 @@ VRRenderThread::VRRenderThread(QObject* parent) {
  * usage will increase for each start/stop thread cycle.
  */
 VRRenderThread::~VRRenderThread() {
-
+	stopAndReset(); // Ensure resources are cleaned up
 }
+
 void VRRenderThread::addActorOffline(vtkActor* actor) {
 
 	/* Check to see if render thread is running */
@@ -98,6 +99,7 @@ void VRRenderThread::issueCommand(int cmd, double value) {
  * calling VRRenderThread::start()
  */
 void VRRenderThread::run() {
+	qDebug() << "run function";
 	/* You might want to edit the 3D model once VR has started, however VTK is not "thread safe".
 	 * This means if you try to edit the VR model from the GUI thread while the VR thread is
 	 * running, the program could become corrupted and crash. The solution is to get the VR thread
@@ -119,10 +121,16 @@ void VRRenderThread::run() {
 	renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
 	/* Loop through list of actors provided and add to scene */
-	vtkActor* a;
 	actors->InitTraversal();
-	while ((a = (vtkActor*)actors->GetNextActor())) {
-		renderer->AddActor(a);
+	vtkActor* currentActor = nullptr;
+	while ((currentActor = actors->GetNextActor())) {
+		currentActor->SetVisibility(1); // Ensure actor is visible
+		qDebug() << "actor to renderer";
+		double* position = currentActor->GetPosition();
+		double* orientation = currentActor->GetOrientation();
+		qDebug() << "Actor position:" << position[0] << position[1] << position[2];
+		qDebug() << "Actor orientation:" << orientation[0] << orientation[1] << orientation[2];
+		renderer->AddActor(currentActor);
 	}
 
 	/* The render window is the actual GUI window
@@ -144,6 +152,7 @@ void VRRenderThread::run() {
 	interactor = vtkOpenVRRenderWindowInteractor::New();
 	interactor->SetRenderWindow(window);
 	interactor->Initialize();
+	//renderer->ResetCamera();
 	window->Render();
 
 
@@ -198,4 +207,40 @@ void VRRenderThread::run() {
 	}
 }
 
+void VRRenderThread::stopAndReset() {
+	qDebug() << "1.";
+	// Set the endRender flag to true to stop the main loop
+	endRender = true;
 
+	qDebug() << "2.";
+	// Ensure the interactor is stopped and cleaned up
+	if (interactor) {
+		interactor->TerminateApp();
+		interactor = nullptr;
+	}
+	
+	qDebug() << "3.";
+	// Clean up the render window
+	if (window) {
+		qDebug() << "3.1";
+		window->Finalize(); // Close any VR-related resources
+		qDebug() << "3.2";
+		window = nullptr;
+	}
+
+	qDebug() << "5."; 
+	// Remove all actors from the renderer and delete the renderer
+	if (renderer) {
+		renderer->RemoveAllViewProps();
+		renderer = nullptr;
+	}
+
+	qDebug() << "6";
+	// Reset the actors list (if needed, to avoid issues on restarting VR)
+	if (actors) {
+		actors->RemoveAllItems();
+	}
+
+	// Log the cleanup process
+	qDebug() << "VR session stopped and all resources have been reset.";
+}

@@ -197,8 +197,11 @@ void MainWindow::on_actionStop_Vr_triggered() {
     if (vrThread) {
         vrThread->issueCommand(VRRenderThread::END_RENDER, 0);
         vrThread->wait(); // Wait for the thread to finish
+        vrThread->quit();
+        vrThread->stopAndReset();
         delete vrThread;
         vrThread = nullptr;
+        qDebug() << "stopped";
     }
 }
 
