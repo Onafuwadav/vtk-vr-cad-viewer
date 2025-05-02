@@ -1,4 +1,3 @@
-
 #include <QDir>
 
 #include <QMessageBox>  // Include QMessageBox for displaying message boxes
@@ -27,95 +26,42 @@
 #include "ModelPartList.h"  // Include ModelPartList header
 #include "optiondialog.h"  // Include Option_Dialog header
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    // Connect button click to handleButton() slot
     connect(ui->pushButton, &QPushButton::released, this, &MainWindow::handleButton);
-        // Create / allocate the ModelPartList
-    this->partList = new ModelPartList("PartsList");
 
-    // Link it to the treeview in the GUI
+    this->partList = new ModelPartList("PartsList");
     ui->treeView->setModel(this->partList);
 
-    // Manually create a model tree
     ModelPart* rootItem = this->partList->getRootItem();
-    // Create strings for both data columns
     QString name = QString("Model");
     QString visible("true");
-
-    // Create child item
     ModelPart* childItem = new ModelPart({ name, visible });
-
-    // Append to tree top-level
     rootItem->appendChild(childItem);
-    // Add 3 top-level items
-   /* for (int i = 0; i < 3; i++) {
-        // Create strings for both data columns
-        QString name = QString("TopLevel %1").arg(i);
-        QString visible("true");
 
-        // Create child item
-        ModelPart* childItem = new ModelPart({ name, visible });
-
-        // Append to tree top-level
-        rootItem->appendChild(childItem);
-
-        // Add 5 sub-items
-        for (int j = 0; j < 5; j++) {
-            QString name = QString("Item %1,%2").arg(i).arg(j);
-            QString visible("true");
-
-            ModelPart* childChildItem = new ModelPart({ name, visible });
-
-            // Append to parent
-
-            childItem->appendChild(childChildItem);
-
-        }
-
-    }*/
-    // Connect the custom signal to QStatusBar’s showMessage() slot
     connect(this, &MainWindow::statusUpdateMessage, ui->statusbar, &QStatusBar::showMessage);
-    // Connect the treeView's clicked signal to the handleTreeClicked slot
     connect(ui->treeView, &QTreeView::clicked, this, &MainWindow::handleTreeClicked);
-    // Connect the edit button's clicked signal to the handleEditButton slot
     connect(ui->pushButton_2, &QPushButton::released, this, &MainWindow::handleEditButton);
-    // Set the context menu policy for the treeView
     ui->treeView->setContextMenuPolicy(Qt::ActionsContextMenu);
-
-    // Add the action to the treeView's context menu
     ui->treeView->addAction(ui->actionRemove_Item);
-
-    // Add the action to the treeView's context menu
     ui->treeView->addAction(ui->actionItem_Options);
-    // Link a render window with the Qt widget
+
     renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     ui->vtkWidget->setRenderWindow(renderWindow);
 
-    // Add a renderer
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderWindow->AddRenderer(renderer);
 
-    /* Create an object and add to renderer (this will change later to display a CAD model) */
-    /* Will just copy and paste cylinder example from before */
-    // This creates a polygonal cylinder model with eight circumferential facets
-    // (i.e, in practice an octagonal prism).
     vtkNew<vtkCylinderSource> cylinder;
     cylinder->SetResolution(8);
 
-    // The mapper is responsible for pushing the geometry into the graphics
-    // library. It may also do color mapping, if scalars or other attributes are
-    // defined.
     vtkNew<vtkPolyDataMapper> cylinderMapper;
     cylinderMapper->SetInputConnection(cylinder->GetOutputPort());
 
-    // The actor is a grouping mechanism: besides the geometry (mapper), it
-    // also has a property, transformation matrix, and/or texture map.
-    // Here we set its color and rotate it around the X and Y axes.
     vtkNew<vtkActor> cylinderActor;
     cylinderActor->SetMapper(cylinderMapper);
     cylinderActor->GetProperty()->SetColor(1., 0., 0.35);
@@ -124,12 +70,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     renderer->AddActor(cylinderActor);
 
-    /* Reset Camera (probably needs to go in its own function that is called whenever model is changed) */
+    addLightingToScene(renderer);
+
     renderer->ResetCamera();
     renderer->GetActiveCamera()->Azimuth(30);
     renderer->GetActiveCamera()->Elevation(30);
     renderer->ResetCameraClippingRange();
-
 }
 
 MainWindow::~MainWindow()
@@ -439,3 +385,28 @@ void MainWindow::on_actionRemove_Item_triggered() {
     emit statusUpdateMessage("Item removed.", 0);
 }
 
+void MainWindow::addLightingToScene(vtkRenderer* targetRenderer) {
+    vtkSmartPointer<vtkLight> light = vtkSmartPointer<vtkLight>::New();
+    light->SetLightTypeToSceneLight();
+    light->SetPosition(5, 5, 15);
+    light->SetPositional(true);
+    light->SetConeAngle(30);
+    light->SetFocalPoint(0, 0, 0);
+    light->SetDiffuseColor(1.0, 1.0, 1.0);
+    light->SetAmbientColor(0.3, 0.3, 0.3);
+    light->SetSpecularColor(1.0, 1.0, 1.0);
+    light->SetIntensity(0.7);
+    targetRenderer->AddLight(light);
+}
+
+void MainWindow::initializeVRComponents() {
+    vrRenderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
+    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
+    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
+
+    vrRenderWindow->AddRenderer(vrRenderer);
+    vrRenderWindow->SetInteractor(vrInteractor);
+    vrInteractor->SetRenderWindow(vrRenderWindow);
+    vrInteractor->Initialize();
+    vrRenderer->ResetCamera();
+}
