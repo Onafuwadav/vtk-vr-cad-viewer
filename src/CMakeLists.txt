@@ -27,8 +27,6 @@ set(PROJECT_SOURCES
         ModelPartList.cpp
         ModelPartList.h
         icons.qrc
-	VRRenderThread.h
-	VRRenderThread.cpp
 
 )
 

@@ -5,6 +5,7 @@
   *     Template for model parts that will be added as treeview items
   *
   *     P Evans 2022
+  *     @brief Defines the ModelPart class functionality, including STL loading and VTK setup.
   */
 
 #include "ModelPart.h"
@@ -20,7 +21,7 @@
 #include <vtkProperty.h>
 #include <vtkSTLReader.h>
 #include <vtkPolyDataMapper.h>  // Ensure this is included
-
+#include <vtkPolyData.h>
 
 
 
@@ -155,6 +156,8 @@ bool ModelPart::isItemVisible()  const {
 }
 
 void ModelPart::loadSTL(const QString& fileName ) {
+
+    filePath = fileName;  // ✅ Save the file path
     /* This is a placeholder function that you will need to modify if you want to use it */
     // Create an STL reader
     file = vtkSmartPointer<vtkSTLReader>::New();
@@ -214,19 +217,24 @@ vtkSmartPointer<vtkActor> ModelPart::getActor() {
     
 }
 
+vtkSmartPointer<vtkPolyData> ModelPart::getPolyData() {
+    if (file) {
+        file->Update();
+        return file->GetOutput();
+    }
+    return nullptr;
+}
+
 void ModelPart::removeChild(int row) {
     if (row >= 0 && row < m_childItems.size())
         m_childItems.removeAt(row);
 }
 
-void ModelPart::setVisibilityRecursive(bool visible) {
-    QString visibilityStr = visible ? "true" : "false";
-    this->set(1, visibilityStr);             // Set the visibility column text
-    this->setItemVisible(visible);           // Set actual visibility (e.g. for rendering)
-    for (int i = 0; i < childCount(); ++i) {
-        if (ModelPart* c = child(i)) {
-            c->setVisibilityRecursive(visible);
-        }
-    }
+void ModelPart::setFilePath(const QString& path) {
+    filePath = path;
 }
-    
+
+QString ModelPart::getFilePath() const {
+    return filePath;
+}
+
