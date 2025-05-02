@@ -45,6 +45,8 @@ private:
 
     void updateRender();
     void updateRenderFromTree(const QModelIndex& index);
+    void addLightingToScene(vtkRenderer* targetRenderer);
+
 
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
