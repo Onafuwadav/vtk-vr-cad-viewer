@@ -19,6 +19,11 @@
 #include <vtkProperty.h>  // Include vtkProperty header
 #include <vtkCamera.h>  // Include vtkCamera header
 
+#include "VRRenderThread.h"
+#include <vtkOpenVRRenderWindow.h>
+#include <vtkOpenVRRenderer.h>
+#include <vtkOpenVRRenderWindowInteractor.h>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -92,6 +97,8 @@ MainWindow::MainWindow(QWidget *parent)
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderWindow->AddRenderer(renderer);
 
+    initializeVRComponents();
+
     /* Create an object and add to renderer (this will change later to display a CAD model) */
     /* Will just copy and paste cylinder example from before */
     // This creates a polygonal cylinder model with eight circumferential facets
@@ -128,6 +135,25 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
+
+void MainWindow::initializeVRComponents() {
+    // Create the VR renderer, render window, and interactor
+    vrRenderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
+    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
+    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
+
+    // Set the renderer and interactor to the VR render window
+    vrRenderWindow->AddRenderer(vrRenderer);
+    vrRenderWindow->SetInteractor(vrInteractor);
+
+    // Initialize the interactor
+    vrInteractor->SetRenderWindow(vrRenderWindow);
+    vrInteractor->Initialize();
+
+    // Optional: Configure initial VR camera position or other settings
+    vrRenderer->ResetCamera();
+}
+
 void MainWindow::handleButton() {
     QMessageBox msgBox;
     msgBox.setText("Add button was clicked");
@@ -135,16 +161,9 @@ void MainWindow::handleButton() {
     emit statusUpdateMessage("Button clicked!", 3000);
 }
 
-void MainWindow::on_actionStop_Vr_triggered() {
-    QMessageBox msgBox;
-    msgBox.setText("Add button was clicked");
-    msgBox.exec();
-    emit statusUpdateMessage("Button clicked!", 3000);
-}
-
 void MainWindow::on_actionStart_Vr_triggered() {
-    if (!vrRenderer || !vrRenderWindow || !vrInteractor) {
-        emit statusUpdateMessage("VR not initialized properly.", 0);
+    if (!vrInteractor) {
+        emit statusUpdateMessage("VR interactor not initialized.", 0);
         return;
     }
 
@@ -152,13 +171,23 @@ void MainWindow::on_actionStart_Vr_triggered() {
         emit statusUpdateMessage("VR is already running.", 0);
         return;
     }
-    vrRenderWindow->Render();
 
     vrThread = new VRRenderThread(vrInteractor, this);
-    // Create and start the render thread
+    connect(vrThread, &QThread::finished, vrThread, &QObject::deleteLater);
     vrThread->start();
 
     emit statusUpdateMessage("VR rendering started.", 3000);
+}
+
+void MainWindow::on_actionStop_Vr_triggered() {
+    if (vrThread) {
+        vrThread->requestInterruption();  // Graceful stop
+        vrThread->wait();                // Wait for the thread to finish
+        delete vrThread;
+        vrThread = nullptr;
+    }
+
+    emit statusUpdateMessage("VR rendering stopped.", 3000);
 }
 
 void MainWindow::handleTreeClicked() {
