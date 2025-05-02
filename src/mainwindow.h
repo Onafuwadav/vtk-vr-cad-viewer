@@ -45,13 +45,12 @@ private:
 
     void updateRender();
     void updateRenderFromTree(const QModelIndex& index);
+    void addVRActorsFromTree(const QModelIndex& index, VRRenderThread* vrThread);
     void addLightingToScene(vtkRenderer* targetRenderer);
-
 
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
 
-    vtkSmartPointer<vtkOpenVRRenderWindowInteractor> vrInteractor;
     VRRenderThread* vrThread = nullptr;
 
 public slots:  // Add this missing line to declare the slot function
