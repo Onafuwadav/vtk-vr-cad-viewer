@@ -1,17 +1,12 @@
-#include "mainwindow.h"
-#include "./ui_mainwindow.h"
-#include <QMessageBox>  // Include QMessageBox for displaying message boxes
-#include "ModelPart.h"  // Include ModelPart header
-#include "ModelPartList.h"  // Include ModelPartList header
-#include <QFileDialog>  // Include QFileDialog for file dialogs
-#include "optiondialog.h"  // Include Option_Dialog header
+
 #include <QDir>
 
+#include <QMessageBox>  // Include QMessageBox for displaying message boxes
+#include <QFileDialog>  // Include QFileDialog for file dialogs
+
 // VTK Headers
-#include <QVTKOpenGLNativeWidget.h>  // Include QVTKOpenGLNativeWidget 
 #include <vtkSmartPointer.h>  // Include VTK smart pointers
 #include <vtkRenderer.h>  // Include VTK renderer
-#include <vtkGenericOpenGLRenderWindow.h>  // Include VTK render window
 #include <vtkCylinderSource.h>  // Include VTK cylinder source
 #include <vtkPolyDataMapper.h>  // Include VTK poly data mapper
 #include <vtkActor.h>  // Include VTK actor
@@ -23,6 +18,14 @@
 #include <vtkOpenVRRenderWindow.h>
 #include <vtkOpenVRRenderer.h>
 #include <vtkOpenVRRenderWindowInteractor.h>
+
+#include <vtkGenericOpenGLRenderWindow.h>  // Include VTK render window
+
+#include "mainwindow.h"
+#include "./ui_mainwindow.h"
+#include "ModelPart.h"  // Include ModelPart header
+#include "ModelPartList.h"  // Include ModelPartList header
+#include "optiondialog.h"  // Include Option_Dialog header
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -97,8 +100,6 @@ MainWindow::MainWindow(QWidget *parent)
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderWindow->AddRenderer(renderer);
 
-    initializeVRComponents();
-
     /* Create an object and add to renderer (this will change later to display a CAD model) */
     /* Will just copy and paste cylinder example from before */
     // This creates a polygonal cylinder model with eight circumferential facets
@@ -136,24 +137,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::initializeVRComponents() {
-    // Create the VR renderer, render window, and interactor
-    vrRenderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
-    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
-    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
-
-    // Set the renderer and interactor to the VR render window
-    vrRenderWindow->AddRenderer(vrRenderer);
-    vrRenderWindow->SetInteractor(vrInteractor);
-
-    // Initialize the interactor
-    vrInteractor->SetRenderWindow(vrRenderWindow);
-    vrInteractor->Initialize();
-
-    // Optional: Configure initial VR camera position or other settings
-    vrRenderer->ResetCamera();
-}
-
 void MainWindow::handleButton() {
     QMessageBox msgBox;
     msgBox.setText("Add button was clicked");
@@ -161,33 +144,55 @@ void MainWindow::handleButton() {
     emit statusUpdateMessage("Button clicked!", 3000);
 }
 
-void MainWindow::on_actionStart_Vr_triggered() {
-    if (!vrInteractor) {
-        emit statusUpdateMessage("VR interactor not initialized.", 0);
-        return;
+void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* vrThread) {
+    // Base case: if the index is invalid, return
+    if (!index.isValid()) return;
+
+    // Retrieve the ModelPart associated with the current index
+    auto modelPart = static_cast<ModelPart*>(index.internalPointer());
+    // Check if the ModelPart is valid
+    if (modelPart) {
+        // Create a VR actor for the ModelPart and add it to the VR render thread
+        vrThread->addActorOffline(modelPart->addNewActor());
     }
 
+    // Recursively process all children of the current index
+    int childCount = partList->rowCount(index);
+    for (int i = 0; i < childCount; i++) {
+        // Get the child index and recursively call addActorsFromTree
+        addVRActorsFromTree(partList->index(i, 0, index), vrThread);
+    }
+}
+
+void MainWindow::on_actionStart_Vr_triggered() {
     if (vrThread && vrThread->isRunning()) {
         emit statusUpdateMessage("VR is already running.", 0);
         return;
     }
 
-    vrThread = new VRRenderThread(vrInteractor, this);
-    connect(vrThread, &QThread::finished, vrThread, &QObject::deleteLater);
-    vrThread->start();
+    // Initialize VR rendering thread
+    vrThread = new VRRenderThread(this);
 
+    // Add all actors from the tree to the VR thread
+    if (partList->rowCount(QModelIndex()) > 0) {
+        int rootCount = partList->rowCount(QModelIndex());
+        for (int i = 0; i < rootCount; i++) {
+            addVRActorsFromTree(partList->index(i, 0, QModelIndex()), vrThread);
+        }
+    }
+
+    // Start the VR thread
+    vrThread->start();
     emit statusUpdateMessage("VR rendering started.", 3000);
 }
 
 void MainWindow::on_actionStop_Vr_triggered() {
     if (vrThread) {
-        vrThread->requestInterruption();  // Graceful stop
-        vrThread->wait();                // Wait for the thread to finish
+        vrThread->issueCommand(VRRenderThread::END_RENDER, 0);
+        vrThread->wait(); // Wait for the thread to finish
         delete vrThread;
         vrThread = nullptr;
     }
-
-    emit statusUpdateMessage("VR rendering stopped.", 3000);
 }
 
 void MainWindow::handleTreeClicked() {
