@@ -1,4 +1,5 @@
 #include "ModelPart.h"
+#include <QFileInfo>
 #include <vtkSmartPointer.h>
 #include <vtkDataSetMapper.h>
 #include <vtkActor.h>
@@ -90,6 +91,9 @@ bool ModelPart::isItemVisible() const {
 }
 
 void ModelPart::loadSTL(const QString& fileName) {
+    filename = fileName;
+    QFileInfo fileInfo(filename);
+
     file = vtkSmartPointer<vtkSTLReader>::New();
     file->SetFileName(fileName.toStdString().c_str());
     file->Update();
@@ -108,6 +112,7 @@ vtkSmartPointer<vtkActor> ModelPart::getActor() {
 }
 
 vtkSmartPointer<vtkActor> ModelPart::addNewActor() {
+    qDebug() << "Creating new actor for ModelPart";
     // Create a new mapper and link it to the same STL reader
     auto newMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
  
@@ -115,11 +120,16 @@ vtkSmartPointer<vtkActor> ModelPart::addNewActor() {
     // Create a new VR actor
     auto newActor = vtkSmartPointer<vtkActor>::New();
     newActor->SetMapper(newMapper);
+    qDebug() << "Actor created successfully";
 
     // Share properties with the GUI actor
     if (actor) {
         newActor->SetProperty(actor->GetProperty());
     }
+    qDebug() << "addNewActor(): Actor state:"
+        << "Mapper:" << newActor->GetMapper()
+        << "Visibility:" << newActor->GetVisibility()
+        << "Color:" << newActor->GetProperty()->GetColor();
 
     return newActor; // Return the new actor for VR
 }
@@ -139,4 +149,13 @@ void ModelPart::setVisibilityRecursive(bool visible) {
             c->setVisibilityRecursive(visible);
         }
     }
+}
+
+bool ModelPart::isFile() const {
+    // Implement logic to determine if this ModelPart is a file
+    return QFileInfo(filename).isFile();
+}
+
+QString ModelPart::getFilename() const {
+    return filename; // Return the stored filename
 }

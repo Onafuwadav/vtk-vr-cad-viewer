@@ -52,8 +52,6 @@ VRRenderThread::VRRenderThread(QObject* parent) {
 VRRenderThread::~VRRenderThread() {
 
 }
-
-
 void VRRenderThread::addActorOffline(vtkActor* actor) {
 
 	/* Check to see if render thread is running */

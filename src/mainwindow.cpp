@@ -151,9 +151,12 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
     // Retrieve the ModelPart associated with the current index
     auto modelPart = static_cast<ModelPart*>(index.internalPointer());
     // Check if the ModelPart is valid
-    if (modelPart) {
+    if (modelPart && modelPart->isFile()) {
+        qDebug() << "Adding actor to VR thread for ModelPart";
         // Create a VR actor for the ModelPart and add it to the VR render thread
         vrThread->addActorOffline(modelPart->addNewActor());
+    } else {
+     qDebug() << "Skipping folder or invalid node.";
     }
 
     // Recursively process all children of the current index
@@ -165,6 +168,7 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
 }
 
 void MainWindow::on_actionStart_Vr_triggered() {
+    qDebug() << "Starting VR session...";
     if (vrThread && vrThread->isRunning()) {
         emit statusUpdateMessage("VR is already running.", 0);
         return;
@@ -173,8 +177,11 @@ void MainWindow::on_actionStart_Vr_triggered() {
     // Initialize VR rendering thread
     vrThread = new VRRenderThread(this);
 
+    qDebug() << "new thread...";
+
     // Add all actors from the tree to the VR thread
     if (partList->rowCount(QModelIndex()) > 0) {
+        qDebug() << "add actor";
         int rootCount = partList->rowCount(QModelIndex());
         for (int i = 0; i < rootCount; i++) {
             addVRActorsFromTree(partList->index(i, 0, QModelIndex()), vrThread);

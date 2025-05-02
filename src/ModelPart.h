@@ -22,6 +22,7 @@ public:
     int childCount() const;
     int columnCount() const;
     QVariant data(int column) const;
+    QString getFilename() const;
     void set(int column, const QVariant& value);
     ModelPart* parentItem();
     int row() const;
@@ -33,6 +34,7 @@ public:
     unsigned char getColourB();
     void setItemVisible(bool isVisible);
     bool isItemVisible() const;
+    bool isFile() const;
     void setVisibilityRecursive(bool visible);
 
     void loadSTL(const QString& fileName);
@@ -44,6 +46,7 @@ private:
     QList<ModelPart*> m_childItems;         /**< List (array) of child items */
     QList<QVariant> m_itemData;             /**< List (array) of column data for item */
     ModelPart* m_parentItem;                /**< Pointer to parent */
+    QString filename;
 
     bool isVisible;                         /**< True/false to indicate if visible in model rendering */
     unsigned char R, G, B;                  /**< RGB color values */

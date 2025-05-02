@@ -66,7 +66,6 @@ public:
       */
     void issueCommand(int cmd, double value);
 
-
 protected:
     /** This is a re-implementation of a QThread function
       */
