@@ -218,3 +218,15 @@ void ModelPart::removeChild(int row) {
     if (row >= 0 && row < m_childItems.size())
         m_childItems.removeAt(row);
 }
+
+void ModelPart::setVisibilityRecursive(bool visible) {
+    QString visibilityStr = visible ? "true" : "false";
+    this->set(1, visibilityStr);             // Set the visibility column text
+    this->setItemVisible(visible);           // Set actual visibility (e.g. for rendering)
+    for (int i = 0; i < childCount(); ++i) {
+        if (ModelPart* c = child(i)) {
+            c->setVisibilityRecursive(visible);
+        }
+    }
+}
+    

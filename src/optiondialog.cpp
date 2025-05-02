@@ -51,5 +51,6 @@ bool OptionDialog::isItemVisible() const {
 // Set the visibility flag in the QCheckBox
 void OptionDialog::setItemVisible(bool visible) {
     ui->checkBox->setChecked(visible);
+    ui->checkBox->setText("Visibility");
 }
 
