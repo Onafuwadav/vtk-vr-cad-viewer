@@ -19,8 +19,6 @@
 #include <vtkProperty.h>  // Include vtkProperty header
 #include <vtkCamera.h>  // Include vtkCamera header
 
-bool isVRActive = false; // true when the VR window is active and rendering
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -94,17 +92,6 @@ MainWindow::MainWindow(QWidget *parent)
     renderer = vtkSmartPointer<vtkRenderer>::New();
     renderWindow->AddRenderer(renderer);
 
-    //Add Vr Renderer
-    vrRenderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
-
-    // Add VR render window
-    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
-    vrRenderWindow->AddRenderer(vrRenderer);
-
-    // VR interactor
-    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
-    vrInteractor->SetRenderWindow(vrRenderWindow);
-
     /* Create an object and add to renderer (this will change later to display a CAD model) */
     /* Will just copy and paste cylinder example from before */
     // This creates a polygonal cylinder model with eight circumferential facets
@@ -172,8 +159,6 @@ void MainWindow::on_actionStart_Vr_triggered() {
     vrThread->start();
 
     emit statusUpdateMessage("VR rendering started.", 3000);
-
-    isVRActive = true;
 }
 
 void MainWindow::handleTreeClicked() {
@@ -189,50 +174,42 @@ void MainWindow::handleTreeClicked() {
     // Emit a signal to update the status bar with the selected item's name
     emit statusUpdateMessage(QString("The selected item is: ") + text, 0);
 }
-void MainWindow::on_actionOpen_File_triggered() {
 
+void MainWindow::on_actionOpen_File_triggered() {
     QString fileName = QFileDialog::getOpenFileName(
         this,                               // Parent widget
         tr("Open File"),                    // Dialog title
         "C:\\",                             // Default directory
         tr("STL Files (*.stl);;Text Files (*.txt)")  // File filters
-        );
-    // Check if a file was selected
+    );
+
     if (!fileName.isEmpty()) {
-        // Display the selected file's name in the status bar
         emit statusUpdateMessage(QString("Selected file: ") + fileName, 0);
-        // Get the currently selected item in the tree view
+
         QModelIndex index = ui->treeView->currentIndex();
         ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
 
-        // If no item is selected, use the root item
         if (!selectedPart) {
             selectedPart = partList->getRootItem();
         }
 
-        // Create a new child item for the selected part
         QString name = QFileInfo(fileName).fileName();  // Use the file name as the item name
         QString visible("true");
 
         ModelPart* childItem = new ModelPart({ name, visible });
         selectedPart->appendChild(childItem);
 
-        // Load the STL file into the new item
         childItem->loadSTL(fileName);
 
-        // Refresh the renderer to display the new STL file
         updateRender();
-        // Reset the camera to ensure the new model is visible
-        renderer->ResetCamera();
-        renderer->GetActiveCamera()->Azimuth(30);
-        renderer->GetActiveCamera()->Elevation(30);
-        renderer->ResetCameraClippingRange();
-        renderWindow->Render(); // Force immediate render
-    } else {
-        // Display a message if no file was selected
+        ui->treeView->reset(); // Reset the tree view to include the new parts
+
+    }
+    else {
         emit statusUpdateMessage("No file selected.", 0);
     }
 }
+
 void MainWindow::handleEditButton() {
     // Get the selected item from the tree view
     OptionDialog dialog(this);
@@ -303,58 +280,59 @@ void MainWindow::on_actionItem_Options_triggered() {
         emit statusUpdateMessage(QString("Dialog rejected"), 0);
     }
 }
+
 void MainWindow::updateRender() {
-    // Remove all existing actors from the renderer
+    // Clear all existing actors from the renderer
     renderer->RemoveAllViewProps();
-    if (vrRenderer) {
-        vrRenderer->RemoveAllViewProps();
-    }
 
-    // Update the renderer with actors from the tree
+    // Start rendering from the root item
     if (partList->rowCount(QModelIndex()) > 0) {
-        updateRenderFromTree(partList->index(0, 0, QModelIndex()));
-    }
-
-    // Force an immediate update of the renderer
-    renderer->Render();
-    renderWindow->Render(); // Ensure the render window updates
-
-    // Render VR view (if initialized)
-    if (isVRActive && vrRenderWindow && vrRenderer) {
-        vrRenderWindow->Render();
-    }
-}
-void MainWindow::updateRenderFromTree(const QModelIndex& index) {
-    if (index.isValid()) {
-        // Retrieve the ModelPart associated with the index
-        ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
-        if (!selectedPart) return;
-
-        // Add the actor from the selected part to the renderer
-        if (selectedPart->getActor()) {
-            renderer->AddActor(selectedPart->getActor());
-            vrRenderer->AddActor(selectedPart->getActor());
+        int rootCount = partList->rowCount(QModelIndex()); // Get the number of top-level items
+        for (int i = 0; i < rootCount; i++) {
+            // Process each top-level item and its children recursively
+            updateRenderFromTree(partList->index(i, 0, QModelIndex()));
         }
     }
 
-    // Check if this part has any children
-    if (!partList->hasChildren(index) || (index.flags() & Qt::ItemNeverHasChildren)) {
-        return;
+    // Force an immediate render update
+    renderer->Render();
+    renderWindow->Render();
+    renderer->Render();
+    renderer->ResetCamera();
+    renderer->GetActiveCamera()->Azimuth(30);
+    renderer->GetActiveCamera()->Elevation(30);
+    renderer->ResetCameraClippingRange();
+    renderWindow->Render(); // Force immediate render
+
+}
+
+void MainWindow::updateRenderFromTree(const QModelIndex& index) {
+    if (!index.isValid()) return;
+
+    // Retrieve the ModelPart associated with the current index
+    ModelPart* part = static_cast<ModelPart*>(index.internalPointer());
+    if (!part) return;
+
+    // Check visibility and add the actor
+    if (part->getActor() && part->isItemVisible()) {
+        renderer->AddActor(part->getActor());
     }
 
-    // Loop through children and add their actors
-    int rows = partList->rowCount(index);
-    for (int i = 0; i < rows; i++) {
-        updateRenderFromTree(partList->index(i, 0, index));
+    // Recursively process all children of the current part
+    int childCount = partList->rowCount(index);
+    for (int i = 0; i < childCount; i++) {
+        updateRenderFromTree(partList->index(i, 0, index)); // Process each child
     }
 }
+
+
 void MainWindow::on_actionOpen_Folder_triggered() {
     QString folderPath = QFileDialog::getExistingDirectory(
         this,
         tr("Select Folder"),
         "C:\\", // Default folder
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-        );
+    );
 
     if (folderPath.isEmpty()) {
         emit statusUpdateMessage("No folder selected.", 0);
@@ -368,32 +346,30 @@ void MainWindow::on_actionOpen_Folder_triggered() {
         emit statusUpdateMessage("No STL files found in folder.", 0);
         return;
     }
-    QString folderName = directory.dirName();
-    ModelPart* stlGroupPart = new ModelPart({ folderName, "true" });
-    partList->getRootItem()->appendChild(stlGroupPart);
 
-    // Load each STL file
+    // Create a new top-level item for the folder
+    QString folderName = directory.dirName();
+    ModelPart* folderPart = new ModelPart({ folderName, "true" });
+
+    ModelPart* rootItem = this->partList->getRootItem();
+    rootItem->appendChild(folderPart);
+
+    // Load each STL file into the new folder part
     for (const QString& fileName : stlFiles) {
         QString fullPath = directory.filePath(fileName);
 
-        // Create new part
-        QModelIndex index = ui->treeView->currentIndex();
-        ModelPart* parentPart = stlGroupPart;
-        if (index.isValid()) {
-            parentPart = static_cast<ModelPart*>(index.internalPointer());
-        } else {
-            parentPart = partList->getRootItem();
-            index = partList->index(0, 0, QModelIndex());
-        }
+        // Create a new child part for each file
+        ModelPart* filePart = new ModelPart({ fileName, "true" });
+        folderPart->appendChild(filePart);
 
-        ModelPart* childPart = new ModelPart({fileName, "true"});
-        parentPart->appendChild(childPart);
-        childPart->loadSTL(fullPath);
+        filePart->loadSTL(fullPath);
     }
+    emit statusUpdateMessage(QString("Loaded %1 STL files into a new folder part.").arg(stlFiles.count()), 0);
 
-    updateRender(); // Refresh the 3D scene
-    emit statusUpdateMessage(QString("Loaded %1 STL files.").arg(stlFiles.count()), 0);
+    updateRender();
+    ui->treeView->reset(); // Reset the tree view to include the new parts
 }
+
 void MainWindow::on_actionRemove_Item_triggered() {
     QModelIndex index = ui->treeView->currentIndex();
 

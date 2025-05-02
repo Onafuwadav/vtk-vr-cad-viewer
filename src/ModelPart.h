@@ -30,6 +30,7 @@
 
 class ModelPart {
 public:
+    bool isItemVisible() const;
     /** Constructor
      * @param data is a List (array) of strings for each property of this item (part name and visiblity in our case
      * @param parent is the parent of this item (one level up in tree)
@@ -114,7 +115,6 @@ public:
     /** Get visible flag
       * @return visible flag as boolean 
       */
-    bool isItemVisible() const;
 	
 	/** Load STL file
       * @param fileName
