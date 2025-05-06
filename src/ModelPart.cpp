@@ -25,12 +25,15 @@ ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
 
     /* You probably want to give the item a default colour */
 
-ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent)
-    : m_itemData(data), m_parentItem(parent), isVisible(true), R(255), G(255), B(255) {
+ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent, const QString& filePath)
+    : m_itemData(data), m_parentItem(parent), isVisible(true), filename(filePath), R(255), G(255), B(255) {
 }
 
 ModelPart::~ModelPart() {
     qDeleteAll(m_childItems);
+}
+QString ModelPart::getFilePath() const {
+    return filename;
 }
 
 void ModelPart::appendChild(ModelPart* item) {
@@ -127,29 +130,6 @@ void ModelPart::loadSTL(const QString& fileName ) {
 
 vtkSmartPointer<vtkActor> ModelPart::getActor() {
     return actor;
-}
-
-vtkSmartPointer<vtkActor> ModelPart::addNewActor() {
-    qDebug() << "Creating new actor for ModelPart";
-    // Create a new mapper and link it to the same STL reader
-    auto newMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
- 
-
-    // Create a new VR actor
-    auto newActor = vtkSmartPointer<vtkActor>::New();
-    newActor->SetMapper(newMapper);
-    qDebug() << "Actor created successfully";
-
-    // Share properties with the GUI actor
-    if (actor) {
-        newActor->SetProperty(actor->GetProperty());
-    }
-    qDebug() << "addNewActor(): Actor state:"
-        << "Mapper:" << newActor->GetMapper()
-        << "Visibility:" << newActor->GetVisibility()
-        << "Color:" << newActor->GetProperty()->GetColor();
-
-    return newActor; // Return the new actor for VR
 }
 
 vtkSmartPointer<vtkPolyData> ModelPart::getPolyData() {

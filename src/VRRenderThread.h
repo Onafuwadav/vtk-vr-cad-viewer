@@ -54,11 +54,19 @@ public:
       */
     ~VRRenderThread();
 
+    void addActorOffline(const QString& filePath);
+
     /** This allows actors to be added to the VR renderer BEFORE the VR
       * interactor has been started
      */
-    void addActorOffline(vtkActor* actor);
 
+    void addActors();
+
+    void stopAndReset();
+
+    void removeViwerProps();
+
+    void reset();
 
     /** This allows commands to be issued to the VR thread in a thread safe way.
       * Function will set variables within the class to indicate the type of
@@ -72,11 +80,14 @@ protected:
     void run() override;
 
 private:
+
+    QThread* owningThread = nullptr;
+
     /* Standard VTK VR Classes */
-    vtkSmartPointer<vtkOpenVRRenderWindow>              window;
-    vtkSmartPointer<vtkOpenVRRenderWindowInteractor>    interactor;
-    vtkSmartPointer<vtkOpenVRRenderer>                  renderer;
-    vtkSmartPointer<vtkOpenVRCamera>                    camera;
+    vtkSmartPointer<vtkOpenVRRenderWindow>              vrwindow;
+    vtkSmartPointer<vtkOpenVRRenderWindowInteractor>    vrinteractor;
+    vtkSmartPointer<vtkOpenVRRenderer>                  vrrenderer;
+    vtkSmartPointer<vtkOpenVRCamera>                    vrcamera;
 
     /* Use to synchronise passing of data to VR thread */
     QMutex                                              mutex;

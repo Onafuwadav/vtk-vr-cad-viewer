@@ -1,14 +1,4 @@
-#include <QDir>
-#include <QMessageBox>  // Include QMessageBox for displaying message boxes
-#include <QFileDialog>  // Include QFileDialog for file dialogs
-
-// VTK Headers
-#include <vtkSmartPointer.h>  // Include VTK smart pointers
-#include <vtkRenderer.h>  // Include VTK renderer
-/** @file mainwindow.cpp
- * @brief Implements the MainWindow class and UI functionality.
- */
-
+#include <QThread>
 
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
@@ -134,8 +124,6 @@ MainWindow::MainWindow(QWidget* parent)
     cylinderActor->RotateY(-45.0);
 
     renderer->AddActor(cylinderActor);
-
-    /* Reset Camera (probably needs to go in its own function that is called whenever model is changed) */
     renderer->ResetCamera();
     renderer->GetActiveCamera()->Azimuth(30);
     renderer->GetActiveCamera()->Elevation(30);
@@ -163,13 +151,9 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
     auto modelPart = static_cast<ModelPart*>(index.internalPointer());
     // Check if the ModelPart is valid
     if (modelPart && modelPart->isFile()) {
-        qDebug() << "Adding actor to VR thread for ModelPart";
         // Create a VR actor for the ModelPart and add it to the VR render thread
-        vrThread->addActorOffline(modelPart->addNewActor());
-    } else {
-     qDebug() << "Skipping folder or invalid node.";
-    }
-
+        vrThread->addActorOffline(modelPart->getFilePath());
+    } 
     // Recursively process all children of the current index
     int childCount = partList->rowCount(index);
     for (int i = 0; i < childCount; i++) {
@@ -179,7 +163,6 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
 }
 
 void MainWindow::on_actionStart_Vr_triggered() {
-    qDebug() << "Starting VR session...";
     if (vrThread && vrThread->isRunning()) {
         emit statusUpdateMessage("VR is already running.", 0);
         return;
@@ -188,11 +171,8 @@ void MainWindow::on_actionStart_Vr_triggered() {
     // Initialize VR rendering thread
     vrThread = new VRRenderThread(this);
 
-    qDebug() << "new thread...";
-
     // Add all actors from the tree to the VR thread
     if (partList->rowCount(QModelIndex()) > 0) {
-        qDebug() << "add actor";
         int rootCount = partList->rowCount(QModelIndex());
         for (int i = 0; i < rootCount; i++) {
             addVRActorsFromTree(partList->index(i, 0, QModelIndex()), vrThread);
@@ -206,8 +186,8 @@ void MainWindow::on_actionStart_Vr_triggered() {
 
 void MainWindow::on_actionStop_Vr_triggered() {
     if (vrThread) {
-        vrThread->issueCommand(VRRenderThread::END_RENDER, 0);
-        vrThread->wait(); // Wait for the thread to finish
+        vrThread->quit();
+        vrThread->stopAndReset();
         delete vrThread;
         vrThread = nullptr;
     }
@@ -337,6 +317,14 @@ void MainWindow::on_actionItem_Options_triggered() {
         selectedPart->setColour(dialog.getColour().red(), dialog.getColour().green(), dialog.getColour().blue());
         selectedPart->setItemVisible(dialog.isItemVisible());
 
+        if (!selectedPart->isItemVisible()) {
+            // Update the visibility status text to "false"
+            selectedPart->set(1, "false");
+        }
+        else {
+            selectedPart->set(1, "true");
+        }
+
         updateRender();
 
         QString msg = QString("Changed color of %1 to RGB(%2, %3, %4)")
@@ -367,12 +355,19 @@ void MainWindow::updateRender() {
     // Force an immediate render update
     renderer->Render();
     renderWindow->Render();
-    renderer->Render();
     renderer->ResetCamera();
-    renderer->GetActiveCamera()->Azimuth(30);
-    renderer->GetActiveCamera()->Elevation(30);
-    renderer->ResetCameraClippingRange();
-    renderWindow->Render(); // Force immediate render
+
+    if (vrThread) {
+        vrThread->removeViwerProps();
+        if (partList->rowCount(QModelIndex()) > 0) {
+            int rootCount = partList->rowCount(QModelIndex());
+            for (int i = 0; i < rootCount; i++) {
+                addVRActorsFromTree(partList->index(i, 0, QModelIndex()), vrThread);
+            }
+        }
+        vrThread->addActors();
+        vrThread->reset();
+	}
 
 }
 
@@ -481,146 +476,6 @@ void MainWindow::addLightingToScene(vtkRenderer* targetRenderer) {
     targetRenderer->AddLight(light);
 }
 
-void MainWindow::on_actionItem_Options_triggered() {
-    // Get the selected item from the tree view
-    QModelIndex index = ui->treeView->currentIndex();
-    ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
-
-    if (!selectedPart) {
-        emit statusUpdateMessage("No item selected.", 0);
-        return;
-    }
-
-    // Create an instance of the OptionDialog
-    OptionDialog dialog(this);
-
-    // Set the dialog's initial values from the selected part
-    dialog.setName(selectedPart->data(0).toString());
-    dialog.setColour(QColor(selectedPart->getColourR(), selectedPart->getColourG(), selectedPart->getColourB()));
-    dialog.setItemVisible(selectedPart->isItemVisible());
-
-    // Show the dialog and check if it was accepted
-    if (dialog.exec() == QDialog::Accepted) {
-        // Update the selected part with the dialog's values
-        selectedPart->set(0, dialog.getName());
-        selectedPart->setColour(dialog.getColour().red(), dialog.getColour().green(), dialog.getColour().blue());
-        selectedPart->setItemVisible(dialog.isItemVisible());
-
-        emit statusUpdateMessage(QString("Dialog accepted"), 0);
-    } else {
-        emit statusUpdateMessage(QString("Dialog rejected"), 0);
-    }
-
-
-}
-
-void MainWindow::updateRender() {
-    // Remove all existing actors from the renderer
-    renderer->RemoveAllViewProps();
-
-    // Update the renderer with actors from the tree
-    updateRenderFromTree(partList->index(0, 0, QModelIndex()));
-
-    // Force an immediate update of the renderer
-    renderer->Render();
-    renderWindow->Render(); // Ensure the render window updates
-}
-
-void MainWindow::updateRenderFromTree(const QModelIndex& index) {
-    if (index.isValid()) {
-        // Retrieve the ModelPart associated with the index
-        ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
-
-        // Add the actor from the selected part to the renderer
-        if (selectedPart->getActor()) {
-            renderer->AddActor(selectedPart->getActor());
-        }
-    }
-
-    // Check if this part has any children
-    if (!partList->hasChildren(index) || (index.flags() & Qt::ItemNeverHasChildren)) {
-        return;
-    }
-
-    // Loop through children and add their actors
-    int rows = partList->rowCount(index);
-    for (int i = 0; i < rows; i++) {
-        updateRenderFromTree(partList->index(i, 0, index));
-    }
-}
-
-void MainWindow::on_actionOpen_Folder_triggered() {
-    QString folderPath = QFileDialog::getExistingDirectory(
-        this,
-        tr("Select Folder"),
-        "C:\\", // Default folder
-        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks
-        );
-
-    if (folderPath.isEmpty()) {
-        emit statusUpdateMessage("No folder selected.", 0);
-        return;
-    }
-
-    QDir directory(folderPath);
-    QStringList stlFiles = directory.entryList(QStringList() << "*.stl", QDir::Files);
-
-    if (stlFiles.isEmpty()) {
-        emit statusUpdateMessage("No STL files found in folder.", 0);
-        return;
-    }
-
-    // Load each STL file
-    for (const QString& fileName : stlFiles) {
-        QString fullPath = directory.filePath(fileName);
-
-        // Create new part
-        QModelIndex index = ui->treeView->currentIndex();
-        ModelPart* parentPart = nullptr;
-        if (index.isValid()) {
-            parentPart = static_cast<ModelPart*>(index.internalPointer());
-        } else {
-            parentPart = partList->getRootItem();
-            index = partList->index(0, 0, QModelIndex());
-        }
-
-        ModelPart* childPart = new ModelPart({fileName, "true"});
-        parentPart->appendChild(childPart);
-        childPart->loadSTL(fullPath);
-    }
-
-    updateRender(); // Refresh the 3D scene
-    emit statusUpdateMessage(QString("Loaded %1 STL files.").arg(stlFiles.count()), 0);
-}
-
-void MainWindow::on_actionRemove_Item_triggered() {
-    QModelIndex index = ui->treeView->currentIndex();
-
-    if (!index.isValid()) {
-        emit statusUpdateMessage("No item selected to remove.", 0);
-        return;
-    }
-
-    // Optional: Ask user for confirmation
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "Remove Item",
-                                  "Are you sure you want to remove the selected item?",
-                                  QMessageBox::Yes | QMessageBox::No);
-
-    if (reply != QMessageBox::Yes) {
-        emit statusUpdateMessage("Removal cancelled.", 0);
-        return;
-    }
-
-    if (!partList->removePart(index)) {
-        emit statusUpdateMessage("Could not remove item.", 0);
-        return;
-    }
-
-    updateRender(); // Refresh 3D view
-    emit statusUpdateMessage("Item removed.", 0);
-}
-
 void MainWindow::on_actionShrink_Filter_toggled(bool checked) {
     QModelIndex index = ui->treeView->currentIndex();
     if (!index.isValid()) {
@@ -723,4 +578,3 @@ void MainWindow::on_actionClip_Filter_toggled(bool checked) {
 
     updateRender();
 }
-

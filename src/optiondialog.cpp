@@ -11,6 +11,11 @@ OptionDialog::OptionDialog(QWidget *parent)
     , ui(new Ui::OptionDialog)
 {
     ui->setupUi(this);
+
+    // Set the range for the RGB spin boxes (0-255)
+    ui->spinBox->setRange(0, 255);       // Red
+    ui->spinBox_2->setRange(0, 255);     // Green
+    ui->spinBox_3->setRange(0, 255);     // Blue
 }
 
 OptionDialog::~OptionDialog()

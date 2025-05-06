@@ -28,14 +28,15 @@
 
 class ModelPart {
 public:
+    ModelPart(const QList<QVariant>& data, ModelPart* parent = nullptr, const QString& filePath="");
     ModelPart(const QString& name);
     /** Constructor
      * @param data is a List (array) of strings for each property of this item (part name and visiblity in our case
      * @param parent is the parent of this item (one level up in tree)
      */
-    ModelPart(const QList<QVariant>& data, ModelPart* parent = nullptr);
+  
     ~ModelPart();
-
+    QString getFilePath() const;
     void appendChild(ModelPart* item);
 
     /** Return child at position 'row' below this item
@@ -120,7 +121,7 @@ private:
     QList<QVariant>                             m_itemData;         /**< List (array of column data for item */
     ModelPart*                                  m_parentItem;       /**< Pointer to parent */
     QString filePath;  // Full path to the STL file
-
+  
     bool isVisible;                         /**< True/false to indicate if visible in model rendering */
     unsigned char R, G, B;                  /**< RGB color values */
 	
