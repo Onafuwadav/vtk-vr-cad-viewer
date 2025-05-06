@@ -1,3 +1,7 @@
+/** @file optiondialog.h
+ * @brief Header for the OptionDialog class, a UI dialog to configure model parts.
+ */
+
 #ifndef OPTIONDIALOG_H
 #define OPTIONDIALOG_H
 
@@ -26,6 +30,8 @@ public:
 
     bool isItemVisible() const;
     void setItemVisible(bool visible);
+
+
 
 private:
     Ui::OptionDialog *ui;

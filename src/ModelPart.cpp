@@ -1,3 +1,12 @@
+/**     @file ModelPart.cpp
+  *
+  *     EEEE2076 - Software Engineering & VR Project
+  *
+  *     Template for model parts that will be added as treeview items
+  *
+  *     P Evans 2022
+  *     @brief Defines the ModelPart class functionality, including STL loading and VTK setup.
+  */
 #include "ModelPart.h"
 #include <QFileInfo>
 #include <vtkSmartPointer.h>
@@ -7,6 +16,14 @@
 #include <vtkProperty.h>
 #include <vtkSTLReader.h>
 #include <vtkPolyDataMapper.h>
+#include <vtkPolyData.h>
+
+
+
+ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
+    : m_itemData(data), m_parentItem(parent), isVisible(true), R(255), G(255), B(255) {}
+
+    /* You probably want to give the item a default colour */
 
 ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent)
     : m_itemData(data), m_parentItem(parent), isVisible(true), R(255), G(255), B(255) {
@@ -90,10 +107,11 @@ bool ModelPart::isItemVisible() const {
     return isVisible;
 }
 
-void ModelPart::loadSTL(const QString& fileName) {
-    filename = fileName;
-    QFileInfo fileInfo(filename);
+void ModelPart::loadSTL(const QString& fileName ) {
 
+    filePath = fileName;  // ✅ Save the file path
+    /* This is a placeholder function that you will need to modify if you want to use it */
+    // Create an STL reader
     file = vtkSmartPointer<vtkSTLReader>::New();
     file->SetFileName(fileName.toStdString().c_str());
     file->Update();
@@ -134,6 +152,14 @@ vtkSmartPointer<vtkActor> ModelPart::addNewActor() {
     return newActor; // Return the new actor for VR
 }
 
+vtkSmartPointer<vtkPolyData> ModelPart::getPolyData() {
+    if (file) {
+        file->Update();
+        return file->GetOutput();
+    }
+    return nullptr;
+}
+
 void ModelPart::removeChild(int row) {
     if (row >= 0 && row < m_childItems.size())
         m_childItems.removeAt(row);
@@ -158,4 +184,12 @@ bool ModelPart::isFile() const {
 
 QString ModelPart::getFilename() const {
     return filename; // Return the stored filename
+}
+
+void ModelPart::setFilePath(const QString& path) {
+    filePath = path;
+}
+
+QString ModelPart::getFilePath() const {
+    return filePath;
 }
