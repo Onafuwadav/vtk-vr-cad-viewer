@@ -247,6 +247,14 @@ void MainWindow::on_actionItem_Options_triggered() {
         selectedPart->setColour(dialog.getColour().red(), dialog.getColour().green(), dialog.getColour().blue());
         selectedPart->setItemVisible(dialog.isItemVisible());
 
+        if (!selectedPart->isItemVisible()) {
+            // Update the visibility status text to "false"
+            selectedPart->set(1, "false");
+        }
+        else {
+            selectedPart->set(1, "true");
+        }
+
         updateRender();
 
         QString msg = QString("Changed color of %1 to RGB(%2, %3, %4)")
