@@ -5,6 +5,7 @@
   *     Template for model part list that will be used to create the trewview.
   *
   *     P Evans 2022
+  *      @brief Declares the ModelPartList class for managing a tree structure of model parts.
   */
   
 #ifndef VIEWER_MODELPARTLIST_H
