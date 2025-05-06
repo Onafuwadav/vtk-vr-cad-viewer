@@ -5,6 +5,7 @@
   *     Template for model part list that will be used to create the trewview.
   *
   *     P Evans 2022
+  *     @brief Implements ModelPartList for tree-based model hierarchy.
   */
 
 #include "ModelPartList.h"

@@ -1,3 +1,8 @@
+/** @file optiondialog.cpp
+ * @brief Implementation of OptionDialog class logic.
+ */
+
+
 #include "optiondialog.h"
 #include "ui_optiondialog.h"
 
@@ -56,6 +61,5 @@ bool OptionDialog::isItemVisible() const {
 // Set the visibility flag in the QCheckBox
 void OptionDialog::setItemVisible(bool visible) {
     ui->checkBox->setChecked(visible);
-    ui->checkBox->setText("Visibility");
 }
 
