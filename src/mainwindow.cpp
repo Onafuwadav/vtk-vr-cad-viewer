@@ -28,11 +28,14 @@
 #include <vtkPlane.h>
 #include <vtkPolyData.h>
 
+
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
 
     // Connect button click to handleButton() slot
     connect(ui->pushButton, &QPushButton::released, this, &MainWindow::handleButton);
@@ -371,6 +374,8 @@ void MainWindow::on_actionRemove_Item_triggered() {
     updateRender(); // Refresh 3D view
     emit statusUpdateMessage("Item removed.", 0);
 }
+
+
 void MainWindow::on_actionShrink_Filter_toggled(bool checked) {
     QModelIndex index = ui->treeView->currentIndex();
     if (!index.isValid()) {

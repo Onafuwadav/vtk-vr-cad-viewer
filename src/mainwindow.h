@@ -35,6 +35,8 @@ private:
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
 
 
+
+
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
@@ -55,6 +57,7 @@ public slots:
     void on_actionRemove_Item_triggered();
     void on_actionShrink_Filter_toggled(bool checked);
     void on_actionClip_Filter_toggled(bool checked);
+
 
 signals:
     /**

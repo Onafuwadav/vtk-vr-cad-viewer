@@ -62,7 +62,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSlider" name="lightIntensitySlider">
+       <widget class="QSlider" name="sliderLighting&#10;">
         <property name="maximum">
          <number>100</number>
         </property>
@@ -70,7 +70,7 @@
          <number>10</number>
         </property>
         <property name="value">
-         <number>70</number>
+         <number>50</number>
         </property>
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
