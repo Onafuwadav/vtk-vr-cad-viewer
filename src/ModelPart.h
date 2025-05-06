@@ -13,7 +13,6 @@
 
 class ModelPart {
 public:
-    ModelPart(const QString& name);
     ModelPart(const QList<QVariant>& data, ModelPart* parent = nullptr);
     ~ModelPart();
 

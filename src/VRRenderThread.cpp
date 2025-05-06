@@ -69,7 +69,24 @@ void VRRenderThread::addActorOffline(vtkActor* actor) {
 	}
 }
 
+void VRRenderThread::removeViwerProps() {
+	renderer->RemoveAllViewProps();
+}
 
+void VRRenderThread::reset() {
+	renderer->Render();
+	window->Render();
+	renderer->ResetCamera();
+}
+
+void VRRenderThread::addActors() {
+	/* Loop through list of actors provided and add to scene */
+	actors->InitTraversal();
+	vtkActor* currentActor = nullptr;
+	while ((currentActor = actors->GetNextActor())) {      
+		renderer->AddActor(currentActor);
+	}
+}
 
 void VRRenderThread::issueCommand(int cmd, double value) {
 
@@ -120,18 +137,10 @@ void VRRenderThread::run() {
 
 	renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
-	/* Loop through list of actors provided and add to scene */
-	actors->InitTraversal();
-	vtkActor* currentActor = nullptr;
-	while ((currentActor = actors->GetNextActor())) {
-		currentActor->SetVisibility(1); // Ensure actor is visible
-		qDebug() << "actor to renderer";
-		double* position = currentActor->GetPosition();
-		double* orientation = currentActor->GetOrientation();
-		qDebug() << "Actor position:" << position[0] << position[1] << position[2];
-		qDebug() << "Actor orientation:" << orientation[0] << orientation[1] << orientation[2];
-		renderer->AddActor(currentActor);
-	}
+	/* The actors are the objects that are displayed in the render window.
+	 * They are added to the renderer
+	 */
+	addActors();
 
 	/* The render window is the actual GUI window
 	 * that appears on the computer screen

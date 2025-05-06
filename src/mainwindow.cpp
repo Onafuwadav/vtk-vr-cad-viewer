@@ -70,8 +70,6 @@ MainWindow::MainWindow(QWidget* parent)
 
     renderer->AddActor(cylinderActor);
 
-    addLightingToScene(renderer);
-
     renderer->ResetCamera();
     renderer->GetActiveCamera()->Azimuth(30);
     renderer->GetActiveCamera()->Elevation(30);
@@ -98,13 +96,9 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
     auto modelPart = static_cast<ModelPart*>(index.internalPointer());
     // Check if the ModelPart is valid
     if (modelPart && modelPart->isFile()) {
-        qDebug() << "Adding actor to VR thread for ModelPart";
         // Create a VR actor for the ModelPart and add it to the VR render thread
         vrThread->addActorOffline(modelPart->addNewActor());
-    } else {
-     qDebug() << "Skipping folder or invalid node.";
-    }
-
+    } 
     // Recursively process all children of the current index
     int childCount = partList->rowCount(index);
     for (int i = 0; i < childCount; i++) {
@@ -114,7 +108,6 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
 }
 
 void MainWindow::on_actionStart_Vr_triggered() {
-    qDebug() << "Starting VR session...";
     if (vrThread && vrThread->isRunning()) {
         emit statusUpdateMessage("VR is already running.", 0);
         return;
@@ -123,11 +116,8 @@ void MainWindow::on_actionStart_Vr_triggered() {
     // Initialize VR rendering thread
     vrThread = new VRRenderThread(this);
 
-    qDebug() << "new thread...";
-
     // Add all actors from the tree to the VR thread
     if (partList->rowCount(QModelIndex()) > 0) {
-        qDebug() << "add actor";
         int rootCount = partList->rowCount(QModelIndex());
         for (int i = 0; i < rootCount; i++) {
             addVRActorsFromTree(partList->index(i, 0, QModelIndex()), vrThread);
@@ -147,7 +137,6 @@ void MainWindow::on_actionStop_Vr_triggered() {
         vrThread->stopAndReset();
         delete vrThread;
         vrThread = nullptr;
-        qDebug() << "stopped";
     }
 }
 
@@ -231,6 +220,7 @@ void MainWindow::handleEditButton() {
         emit statusUpdateMessage(QString("Dialog rejected"), 0);
     }
 }
+
 void MainWindow::on_actionItem_Options_triggered() {
     // Get the selected item from the tree view
     QModelIndex index = ui->treeView->currentIndex();
@@ -287,12 +277,19 @@ void MainWindow::updateRender() {
     // Force an immediate render update
     renderer->Render();
     renderWindow->Render();
-    renderer->Render();
     renderer->ResetCamera();
-    renderer->GetActiveCamera()->Azimuth(30);
-    renderer->GetActiveCamera()->Elevation(30);
-    renderer->ResetCameraClippingRange();
-    renderWindow->Render(); // Force immediate render
+
+    if (vrThread) {
+        vrThread->removeViwerProps();
+        if (partList->rowCount(QModelIndex()) > 0) {
+            int rootCount = partList->rowCount(QModelIndex());
+            for (int i = 0; i < rootCount; i++) {
+                addVRActorsFromTree(partList->index(i, 0, QModelIndex()), vrThread);
+            }
+        }
+        vrThread->addActors();
+        vrThread->reset();
+	}
 
 }
 
@@ -386,30 +383,4 @@ void MainWindow::on_actionRemove_Item_triggered() {
 
     updateRender(); // Refresh 3D view
     emit statusUpdateMessage("Item removed.", 0);
-}
-
-void MainWindow::addLightingToScene(vtkRenderer* targetRenderer) {
-    vtkSmartPointer<vtkLight> light = vtkSmartPointer<vtkLight>::New();
-    light->SetLightTypeToSceneLight();
-    light->SetPosition(5, 5, 15);
-    light->SetPositional(true);
-    light->SetConeAngle(30);
-    light->SetFocalPoint(0, 0, 0);
-    light->SetDiffuseColor(1.0, 1.0, 1.0);
-    light->SetAmbientColor(0.3, 0.3, 0.3);
-    light->SetSpecularColor(1.0, 1.0, 1.0);
-    light->SetIntensity(0.7);
-    targetRenderer->AddLight(light);
-}
-
-void MainWindow::initializeVRComponents() {
-    vrRenderer = vtkSmartPointer<vtkOpenVRRenderer>::New();
-    vrRenderWindow = vtkSmartPointer<vtkOpenVRRenderWindow>::New();
-    vrInteractor = vtkSmartPointer<vtkOpenVRRenderWindowInteractor>::New();
-
-    vrRenderWindow->AddRenderer(vrRenderer);
-    vrRenderWindow->SetInteractor(vrInteractor);
-    vrInteractor->SetRenderWindow(vrRenderWindow);
-    vrInteractor->Initialize();
-    vrRenderer->ResetCamera();
 }

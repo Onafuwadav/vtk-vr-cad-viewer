@@ -112,14 +112,9 @@ vtkSmartPointer<vtkActor> ModelPart::getActor() {
 }
 
 vtkSmartPointer<vtkActor> ModelPart::addNewActor() {
-    qDebug() << "Creating new actor for ModelPart";
-    // Create a new mapper and link it to the same STL reader
-    auto newMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
- 
-
     // Create a new VR actor
     auto newActor = vtkSmartPointer<vtkActor>::New();
-    newActor->SetMapper(newMapper);
+    newActor->SetMapper(this->mapper);
     qDebug() << "Actor created successfully";
 
     // Share properties with the GUI actor
@@ -130,6 +125,9 @@ vtkSmartPointer<vtkActor> ModelPart::addNewActor() {
         << "Mapper:" << newActor->GetMapper()
         << "Visibility:" << newActor->GetVisibility()
         << "Color:" << newActor->GetProperty()->GetColor();
+
+    qDebug() << "Mapper input connection: " << mapper->GetInputConnection(0, 0);
+    qDebug() << "Actor mapper: " << newActor->GetMapper();
 
     return newActor; // Return the new actor for VR
 }
