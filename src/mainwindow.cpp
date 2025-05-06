@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QThread>
 
 #include <QMessageBox>  // Include QMessageBox for displaying message boxes
 #include <QFileDialog>  // Include QFileDialog for file dialogs
@@ -131,8 +132,6 @@ void MainWindow::on_actionStart_Vr_triggered() {
 
 void MainWindow::on_actionStop_Vr_triggered() {
     if (vrThread) {
-        vrThread->issueCommand(VRRenderThread::END_RENDER, 0);
-        vrThread->wait(); // Wait for the thread to finish
         vrThread->quit();
         vrThread->stopAndReset();
         delete vrThread;

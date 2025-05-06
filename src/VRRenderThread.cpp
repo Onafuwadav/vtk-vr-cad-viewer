@@ -49,7 +49,10 @@ VRRenderThread::VRRenderThread(QObject* parent) {
  * usage will increase for each start/stop thread cycle.
  */
 VRRenderThread::~VRRenderThread() {
-	stopAndReset(); // Ensure resources are cleaned up
+	if (actors) {
+		actors->Delete();
+		actors = nullptr;
+	}
 }
 
 void VRRenderThread::addActorOffline(const QString& filePath) {
@@ -81,13 +84,13 @@ void VRRenderThread::addActorOffline(const QString& filePath) {
 }
 
 void VRRenderThread::removeViwerProps() {
-	renderer->RemoveAllViewProps();
+	vrrenderer->RemoveAllViewProps();
 }
 
 void VRRenderThread::reset() {
-	renderer->Render();
-	window->Render();
-	renderer->ResetCamera();
+	vrrenderer->Render();
+	vrwindow->Render();
+	vrrenderer->ResetCamera();
 }
 
 void VRRenderThread::addActors() {
@@ -95,7 +98,7 @@ void VRRenderThread::addActors() {
 	actors->InitTraversal();
 	vtkActor* currentActor = nullptr;
 	while ((currentActor = actors->GetNextActor())) {      
-		renderer->AddActor(currentActor);
+		vrrenderer->AddActor(currentActor);
 	}
 }
 
@@ -127,8 +130,6 @@ void VRRenderThread::issueCommand(int cmd, double value) {
  * calling VRRenderThread::start()
  */
 void VRRenderThread::run() {
-    qDebug() << "run function";
-
     vtkNew<vtkNamedColors> colors;
 
     // Set the background color
@@ -136,40 +137,40 @@ void VRRenderThread::run() {
     colors->SetColor("BkgColor", bkg.data());
 
     // The renderer generates the image which is then displayed on the render window.
-    renderer = vtkOpenVRRenderer::New();
-    renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
+    vrrenderer = vtkOpenVRRenderer::New();
+    vrrenderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
     // Add actors to the scene
     addActors();
 
     // Create the VR render window
-    window = vtkOpenVRRenderWindow::New();
-    window->Initialize();
-    window->AddRenderer(renderer);
+    vrwindow = vtkOpenVRRenderWindow::New();
+    vrwindow->Initialize();
+    vrwindow->AddRenderer(vrrenderer);
 
     // Create OpenVR Camera
-    camera = vtkOpenVRCamera::New();
-    renderer->SetActiveCamera(camera);
+    vrcamera = vtkOpenVRCamera::New();
+    vrrenderer->SetActiveCamera(vrcamera);
 
     // Create the render window interactor
-    interactor = vtkOpenVRRenderWindowInteractor::New();
-    interactor->SetRenderWindow(window);
-    interactor->Initialize();
-    window->Render();
+    vrinteractor = vtkOpenVRRenderWindowInteractor::New();
+    vrinteractor->SetRenderWindow(vrwindow);
+    vrinteractor->Initialize();
+    vrwindow->Render();
 
     // Start the VR rendering loop
     endRender = false;
     t_last = std::chrono::steady_clock::now();
 
-    while (!interactor->GetDone() && !this->endRender) {
-        interactor->DoOneEvent(window, renderer);
+    while (!vrinteractor->GetDone() && !this->endRender) {
+        vrinteractor->DoOneEvent(vrwindow, vrrenderer);
 
         if (std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - t_last)
             .count() > 20) {
 
             // Perform animation or actor transformations
-            vtkActorCollection* actorList = renderer->GetActors();
+            vtkActorCollection* actorList = vrrenderer->GetActors();
             vtkActor* a;
 
             // X Rotation
@@ -199,39 +200,26 @@ void VRRenderThread::run() {
 }
 
 void VRRenderThread::stopAndReset() {
-	qDebug() << "1.";
 	// Set the endRender flag to true to stop the main loop
 	endRender = true;
 
-	qDebug() << "2.";
-	// Ensure the interactor is stopped and cleaned up
-	if (interactor) {
-		interactor->TerminateApp();
-		interactor = nullptr;
-	}
-	
-	qDebug() << "3.";
-	// Clean up the render window
-	if (window) {
-		qDebug() << "3.1";
-		window->Finalize(); // Close any VR-related resources
-		qDebug() << "3.2";
-		window = nullptr;
-	}
-
-	qDebug() << "5."; 
 	// Remove all actors from the renderer and delete the renderer
-	if (renderer) {
-		renderer->RemoveAllViewProps();
-		renderer = nullptr;
+	if (vrrenderer) {
+		vrrenderer->RemoveAllViewProps();
+		// renderer = nullptr;
 	}
 
-	qDebug() << "6";
-	// Reset the actors list (if needed, to avoid issues on restarting VR)
-	if (actors) {
-		actors->RemoveAllItems();
+	// Ensure the interactor is stopped and cleaned up
+	if (vrinteractor) {
+		vrinteractor->TerminateApp();
+		vrinteractor = nullptr;
 	}
 
-	// Log the cleanup process
-	qDebug() << "VR session stopped and all resources have been reset.";
+	// Clean up the render window
+	if (vrwindow) {
+		vrwindow->Finalize(); // Close any VR-related resources
+		vrwindow = nullptr;
+	}
+
+	
 }

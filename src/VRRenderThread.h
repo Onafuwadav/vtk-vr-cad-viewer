@@ -80,11 +80,14 @@ protected:
     void run() override;
 
 private:
+
+    QThread* owningThread = nullptr;
+
     /* Standard VTK VR Classes */
-    vtkSmartPointer<vtkOpenVRRenderWindow>              window;
-    vtkSmartPointer<vtkOpenVRRenderWindowInteractor>    interactor;
-    vtkSmartPointer<vtkOpenVRRenderer>                  renderer;
-    vtkSmartPointer<vtkOpenVRCamera>                    camera;
+    vtkSmartPointer<vtkOpenVRRenderWindow>              vrwindow;
+    vtkSmartPointer<vtkOpenVRRenderWindowInteractor>    vrinteractor;
+    vtkSmartPointer<vtkOpenVRRenderer>                  vrrenderer;
+    vtkSmartPointer<vtkOpenVRCamera>                    vrcamera;
 
     /* Use to synchronise passing of data to VR thread */
     QMutex                                              mutex;
