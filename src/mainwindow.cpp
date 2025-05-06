@@ -97,7 +97,7 @@ void MainWindow::addVRActorsFromTree(const QModelIndex& index, VRRenderThread* v
     // Check if the ModelPart is valid
     if (modelPart && modelPart->isFile()) {
         // Create a VR actor for the ModelPart and add it to the VR render thread
-        vrThread->addActorOffline(modelPart->addNewActor());
+        vrThread->addActorOffline(modelPart->getFilePath());
     } 
     // Recursively process all children of the current index
     int childCount = partList->rowCount(index);

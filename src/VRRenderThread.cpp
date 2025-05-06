@@ -27,7 +27,6 @@
 #include <vtkDataSetmapper.h>
 #include <vtkCallbackCommand.h>
 
-
 /* The class constructor is called by MainWindow and runs in the primary program thread, this thread
  * will go on to handle the GUI (mouse clicks, etc). The OpenVRRenderWindowInteractor cannot be start()ed
  * in the constructor, as it will take control of the main thread to handle the VR interaction (headset
@@ -53,10 +52,22 @@ VRRenderThread::~VRRenderThread() {
 	stopAndReset(); // Ensure resources are cleaned up
 }
 
-void VRRenderThread::addActorOffline(vtkActor* actor) {
+void VRRenderThread::addActorOffline(const QString& filePath) {
 
 	/* Check to see if render thread is running */
 	if (!this->isRunning()) {
+		auto reader = vtkSmartPointer<vtkSTLReader>::New();
+		reader->SetFileName(filePath.toStdString().c_str());
+		reader->Update();
+
+		// Create mapper in the VR thread
+		auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+		mapper->SetInputConnection(reader->GetOutputPort());
+
+		// Create actor in the VR thread
+		auto actor = vtkSmartPointer<vtkActor>::New();
+		actor->SetMapper(mapper);
+
 		double* ac = actor->GetOrigin();
 
 		/* I have found that these initial transforms will position the FS
@@ -116,104 +127,75 @@ void VRRenderThread::issueCommand(int cmd, double value) {
  * calling VRRenderThread::start()
  */
 void VRRenderThread::run() {
-	qDebug() << "run function";
-	/* You might want to edit the 3D model once VR has started, however VTK is not "thread safe".
-	 * This means if you try to edit the VR model from the GUI thread while the VR thread is
-	 * running, the program could become corrupted and crash. The solution is to get the VR thread
-	 * to edit the model. Any decision to change the VR model will come fromthe user via the GUI thread,
-	 * so there needs to be a mechanism to pass data from the GUi thread to the VR thread.
-	 */
+    qDebug() << "run function";
 
-	vtkNew<vtkNamedColors> colors;
+    vtkNew<vtkNamedColors> colors;
 
-	// Set the background color.
-	std::array<unsigned char, 4> bkg{ {26, 51, 102, 255} };
-	colors->SetColor("BkgColor", bkg.data());
+    // Set the background color
+    std::array<unsigned char, 4> bkg{ {26, 51, 102, 255} };
+    colors->SetColor("BkgColor", bkg.data());
 
-	// The renderer generates the image
-	// which is then displayed on the render window.
-	// It can be thought of as a scene to which the actor is added
-	renderer = vtkOpenVRRenderer::New();
+    // The renderer generates the image which is then displayed on the render window.
+    renderer = vtkOpenVRRenderer::New();
+    renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
 
-	renderer->SetBackground(colors->GetColor3d("BkgColor").GetData());
+    // Add actors to the scene
+    addActors();
 
-	/* The actors are the objects that are displayed in the render window.
-	 * They are added to the renderer
-	 */
-	addActors();
+    // Create the VR render window
+    window = vtkOpenVRRenderWindow::New();
+    window->Initialize();
+    window->AddRenderer(renderer);
 
-	/* The render window is the actual GUI window
-	 * that appears on the computer screen
-	 */
-	window = vtkOpenVRRenderWindow::New();
+    // Create OpenVR Camera
+    camera = vtkOpenVRCamera::New();
+    renderer->SetActiveCamera(camera);
 
-	window->Initialize();
-	window->AddRenderer(renderer);
+    // Create the render window interactor
+    interactor = vtkOpenVRRenderWindowInteractor::New();
+    interactor->SetRenderWindow(window);
+    interactor->Initialize();
+    window->Render();
 
-	/* Create Open VR Camera */
-	camera = vtkOpenVRCamera::New();
-	renderer->SetActiveCamera(camera);
+    // Start the VR rendering loop
+    endRender = false;
+    t_last = std::chrono::steady_clock::now();
 
-	/* The render window interactor captures mouse events
-	 * and will perform appropriate camera or actor manipulation
-	 * depending on the nature of the events.
-	 */
-	interactor = vtkOpenVRRenderWindowInteractor::New();
-	interactor->SetRenderWindow(window);
-	interactor->Initialize();
-	//renderer->ResetCamera();
-	window->Render();
+    while (!interactor->GetDone() && !this->endRender) {
+        interactor->DoOneEvent(window, renderer);
 
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - t_last)
+            .count() > 20) {
 
-	/* Now start the VR - we will implement the command loop manually
-	 * so it can be interrupted to make modifications to the actors
-	 * (i.e. to implement animation)
-	 */
-	endRender = false;
-	t_last = std::chrono::steady_clock::now();
+            // Perform animation or actor transformations
+            vtkActorCollection* actorList = renderer->GetActors();
+            vtkActor* a;
 
-	while (!interactor->GetDone() && !this->endRender) {
-		interactor->DoOneEvent(window, renderer);
+            // X Rotation
+            actorList->InitTraversal();
+            while ((a = (vtkActor*)actorList->GetNextActor())) {
+                a->RotateX(rotateX);
+            }
 
-		/* Check to see if enough time has elapsed since last update
-		 * This looks overcomplicated (and it is, C++ loves to make things unecessarily complicated!) but
-		 * is really just checking if more than 20ms have elaspsed since the last animation step. The
-		 * complications comes from the fact that numbers representing time on computers don't usually have
-		 * standard second/millisecond units. Because everything is a class in C++, the converion from
-		 * computer units to seconds/milliseconds ends up looking like what you see below.
-		 *
-		 * My choice of 20ms is arbitrary, if this value is too small the animation calculations could begin to
-		 * interfere with the interator processes and make the simulation unresponsive. If it is too large
-		 * the animations will be jerky. Play with the value to see what works best.
-		 */
-		if (std::chrono::duration_cast <std::chrono::milliseconds> (std::chrono::steady_clock::now() - t_last).count() > 20) {
+            // Y Rotation
+            actorList->InitTraversal();
+            while ((a = (vtkActor*)actorList->GetNextActor())) {
+                a->RotateY(rotateY);
+            }
 
-			/* Do things that might need doing ... */
-			vtkActorCollection* actorList = renderer->GetActors();
-			vtkActor* a;
+            // Z Rotation
+            actorList->InitTraversal();
+            while ((a = (vtkActor*)actorList->GetNextActor())) {
+                a->RotateZ(rotateZ);
+            }
 
-			/* X Rotation */
-			actorList->InitTraversal();
-			while ((a = (vtkActor*)actorList->GetNextActor())) {
-				a->RotateX(rotateX);
-			}
+            // Update the last time
+            t_last = std::chrono::steady_clock::now();
+        }
+    }
 
-			/* Y Rotation */
-			actorList->InitTraversal();
-			while ((a = (vtkActor*)actorList->GetNextActor())) {
-				a->RotateY(rotateY);
-			}
-
-			/* Z Rotation */
-			actorList->InitTraversal();
-			while ((a = (vtkActor*)actorList->GetNextActor())) {
-				a->RotateZ(rotateZ);
-			}
-
-			/* Remember time now */
-			t_last = std::chrono::steady_clock::now();
-		}
-	}
+    // Clean up OpenGL resources
 }
 
 void VRRenderThread::stopAndReset() {

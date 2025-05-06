@@ -13,9 +13,9 @@
 
 class ModelPart {
 public:
-    ModelPart(const QList<QVariant>& data, ModelPart* parent = nullptr);
+    ModelPart(const QList<QVariant>& data, ModelPart* parent = nullptr, const QString& filePath="");
     ~ModelPart();
-
+    QString getFilePath() const;
     void appendChild(ModelPart* item);
     ModelPart* child(int row);
     int childCount() const;
@@ -46,7 +46,6 @@ private:
     QList<QVariant> m_itemData;             /**< List (array) of column data for item */
     ModelPart* m_parentItem;                /**< Pointer to parent */
     QString filename;
-
     bool isVisible;                         /**< True/false to indicate if visible in model rendering */
     unsigned char R, G, B;                  /**< RGB color values */
 
