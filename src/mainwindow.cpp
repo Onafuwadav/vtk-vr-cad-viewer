@@ -25,6 +25,7 @@
 #include <vtkShrinkPolyData.h>
 #include <vtkPlane.h>
 #include <vtkPolyData.h>
+#include <vtkLight.h>
 
 
 MainWindow::MainWindow(QWidget* parent)
@@ -220,46 +221,27 @@ void MainWindow::on_actionOpen_File_triggered() {
 
         QModelIndex index = ui->treeView->currentIndex();
         ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
-            );
-            // Check if a file 
-            // was selected
-            if (!fileName.isEmpty()) {
-                // Display the selected file's name in the status bar
-                emit statusUpdateMessage(QString("Selected file: ") + fileName, 0);
-                // Get the currently selected item in the tree view
-                QModelIndex index = ui->treeView->currentIndex();
-                ModelPart* selectedPart = static_cast<ModelPart*>(index.internalPointer());
 
-                // If no item is selected, use the root item
-                if (!selectedPart) {
-                    selectedPart = partList->getRootItem();
-                }
-                // Create a new child item for the selected part
-                QString name = QFileInfo(fileName).fileName();  // Use the file name as the item name
-                QString visible("true");
+        if (!selectedPart) {
+            selectedPart = partList->getRootItem();
+        }
 
-                ModelPart* childItem = new ModelPart({ name, visible });
-                selectedPart->appendChild(childItem);
+        QString name = QFileInfo(fileName).fileName();  // Use the file name as the item name
+        QString visible("true");
 
-                // Load the STL file into the new item
-                childItem->loadSTL(fileName);
+        ModelPart* childItem = new ModelPart({ name, visible });
+        selectedPart->appendChild(childItem);
 
-                // Refresh the renderer to display the new STL file
-                updateRender();
-                // Reset the camera to ensure the new model is visible
-                renderer->ResetCamera();
-                renderer->GetActiveCamera()->Azimuth(30);
-                renderer->GetActiveCamera()->Elevation(30);
-                renderer->ResetCameraClippingRange();
-                renderWindow->Render(); // Force immediate render
-            }
-            else {
-                // Display a message if no file was selected
-                emit statusUpdateMessage("No file selected.", 0);
-            }
+        childItem->loadSTL(fileName);
+
+        updateRender();
+        ui->treeView->reset(); // Reset the tree view to include the new parts
+
+    }
+    else {
+        emit statusUpdateMessage("No file selected.", 0);
     }
 }
-
 void MainWindow::handleEditButton() {
     // Get the selected item from the tree view
     OptionDialog dialog(this);

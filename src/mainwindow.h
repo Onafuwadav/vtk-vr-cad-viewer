@@ -8,6 +8,7 @@
 #include <QMainWindow>
 #include "ModelPart.h"
 #include "ModelPartList.h"
+#include "VRRenderThread.h"
 #include "optiondialog.h"
 
 #include <QVTKOpenGLNativeWidget.h>
@@ -29,20 +30,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 private:
-    ModelPartList* partList; // Pointer to the ModelPartList
-
-    vtkSmartPointer<vtkRenderer> renderer;
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
-
-
-
-
-public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
-
-private:
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
     void updateRender();
     void updateRenderFromTree(const QModelIndex& index);
     void addVRActorsFromTree(const QModelIndex& index, VRRenderThread* vrThread);
@@ -52,24 +40,25 @@ private:
 
     VRRenderThread* vrThread = nullptr;
 
+    ModelPartList* partList; // Pointer to the ModelPartList
+
+public:
+    MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
+
 public slots:  // Add this missing line to declare the slot function
     void handleButton();  // Slot to handle button clicks
     void handleTreeClicked();  // Slot to handle tree item clicks
     void on_actionOpen_File_triggered();  // Slot for handling the "Open File" action
     void handleEditButton();  // New slot for the edit button
     void addLightingToScene(vtkRenderer* targetRenderer); // ✅ Lighting function declaration
-
-public slots:
-    void handleButton();
-    void handleTreeClicked();
-    void on_actionOpen_File_triggered();
-    void handleEditButton();
     void on_actionItem_Options_triggered();
     void on_actionOpen_Folder_triggered();
     void on_actionRemove_Item_triggered();
+    void on_actionStart_Vr_triggered();
     void on_actionShrink_Filter_toggled(bool checked);
     void on_actionClip_Filter_toggled(bool checked);
-
+    void on_actionStop_Vr_triggered();
 
 signals:
     /**
