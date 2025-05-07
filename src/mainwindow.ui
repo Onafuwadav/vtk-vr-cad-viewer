@@ -100,7 +100,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -136,6 +136,8 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionOpen_Folder"/>
+   <addaction name="actionStart_Vr"/>
+   <addaction name="actionStop_Vr"/>
    <addaction name="actionShrink_Filter"/>
    <addaction name="actionClip_Filter"/>
   </widget>
@@ -196,6 +198,36 @@
    </property>
    <property name="text">
     <string>Clip Filter</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionStop_Vr">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/Icons/stopVR.png</normaloff>:/Icons/Icons/stopVR.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stop Vr</string>
+   </property>
+   <property name="toolTip">
+    <string>Stop Vr</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionStart_Vr">
+   <property name="icon">
+    <iconset resource="icons.qrc">
+     <normaloff>:/Icons/Icons/startVR.png</normaloff>:/Icons/Icons/startVR.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start Vr</string>
+   </property>
+   <property name="toolTip">
+    <string>Start Vr</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>

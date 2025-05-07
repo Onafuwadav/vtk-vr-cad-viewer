@@ -18,13 +18,6 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkPolyData.h>
 
-
-
-ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent )
-    : m_itemData(data), m_parentItem(parent), isVisible(true), R(255), G(255), B(255) {}
-
-    /* You probably want to give the item a default colour */
-
 ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent, const QString& filePath)
     : m_itemData(data), m_parentItem(parent), isVisible(true), filename(filePath), R(255), G(255), B(255) {
 }
@@ -32,6 +25,7 @@ ModelPart::ModelPart(const QList<QVariant>& data, ModelPart* parent, const QStri
 ModelPart::~ModelPart() {
     qDeleteAll(m_childItems);
 }
+
 QString ModelPart::getFilePath() const {
     return filename;
 }
@@ -168,8 +162,4 @@ QString ModelPart::getFilename() const {
 
 void ModelPart::setFilePath(const QString& path) {
     filePath = path;
-}
-
-QString ModelPart::getFilePath() const {
-    return filePath;
 }

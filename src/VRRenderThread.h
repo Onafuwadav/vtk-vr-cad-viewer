@@ -80,9 +80,6 @@ protected:
     void run() override;
 
 private:
-
-    QThread* owningThread = nullptr;
-
     /* Standard VTK VR Classes */
     vtkSmartPointer<vtkOpenVRRenderWindow>              vrwindow;
     vtkSmartPointer<vtkOpenVRRenderWindowInteractor>    vrinteractor;

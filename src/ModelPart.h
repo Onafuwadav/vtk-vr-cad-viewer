@@ -29,14 +29,12 @@
 class ModelPart {
 public:
     ModelPart(const QList<QVariant>& data, ModelPart* parent = nullptr, const QString& filePath="");
-    ModelPart(const QString& name);
     /** Constructor
      * @param data is a List (array) of strings for each property of this item (part name and visiblity in our case
      * @param parent is the parent of this item (one level up in tree)
      */
   
     ~ModelPart();
-    QString getFilePath() const;
     void appendChild(ModelPart* item);
 
     /** Return child at position 'row' below this item
@@ -51,21 +49,14 @@ public:
     void set(int column, const QVariant& value);
     ModelPart* parentItem();
     int row() const;
-    void removeChild(int row);
 
     void setColour(const unsigned char R, const unsigned char G, const unsigned char B);
     unsigned char getColourR();
     unsigned char getColourG();
     unsigned char getColourB();
     void setItemVisible(bool isVisible);
-    bool isItemVisible() const;
     bool isFile() const;
     void setVisibilityRecursive(bool visible);
-
-    void loadSTL(const QString& fileName);
-
-    vtkSmartPointer<vtkActor> getActor(); // Get the GUI actor
-    vtkSmartPointer<vtkActor> addNewActor(); // Create a new VR actor
 
     /** Get visible flag
       * @return visible flag as boolean 
