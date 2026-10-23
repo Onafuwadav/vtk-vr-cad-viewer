@@ -2,8 +2,6 @@
 
 A desktop 3D CAD viewer written in **C++** with **Qt** and **VTK**. You can load STL models of a Formula Student car, organise the parts in a tree view, edit how they look, and view the whole assembly in **virtual reality** through OpenVR/SteamVR.
 
-This was the group project for **EEEE2076 – Software Engineering & VR** at the University of Nottingham (2024, Group 13).
-
 ## Features
 
 - **STL loading**: open a single STL file, or a whole folder of parts at once
@@ -76,5 +74,5 @@ The Doxygen class and file reference is hosted at **[onafuwadav.github.io/vtk-vr
 
 ## Acknowledgements
 
-- Template code for `ModelPart`, `ModelPartList` and `VRRenderThread` came from the module materials by P. Evans, University of Nottingham ([EEEE2076](https://github.com/plevans/EEEE2076)).
-- Built by Group 13 as part of the 2024 EEEE2076 group assessment.
+- Template code for `ModelPart`, `ModelPartList` and `VRRenderThread` came from the module materials by P. Evans, University of Nottingham ([Template code](https://github.com/plevans/EEEE2076)).
+- Built by Group 13 as part of group assessment.
